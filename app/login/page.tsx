@@ -236,7 +236,7 @@ export default function Home() {
     return (
       <>
         <Head>
-          <title dir="rtl">Alia Market - منصة تسوق إلكترونية</title>
+          <title>Alia Market - منصة تسوق إلكترونية</title>
           <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
           <meta name="description" content="اكتشف أحدث المنتجات من أفضل البائعين ضمن فئات متنوعة" />
         </Head>
@@ -275,8 +275,8 @@ export default function Home() {
         )}
 
         {/* Mobile Header */}
-        <header dir="rtl"  className="sticky top-0 z-40 bg-blue-900 text-white shadow-sm">
-          <div  className="container mx-auto px-4 py-3 flex items-center justify-between">
+        <header className="sticky top-0 z-40 bg-blue-900 text-white shadow-sm">
+          <div className="container mx-auto px-4 py-3 flex items-center justify-between">
             <button 
               onClick={() => setMenuOpen(!menuOpen)}
               className="text-white"
@@ -310,7 +310,7 @@ export default function Home() {
 
           {/* Mobile Menu */}
           {menuOpen && (
-            <div dir="rtl" className="absolute top-full left-0 right-0 bg-white shadow-lg z-50">
+            <div className="absolute top-full left-0 right-0 bg-white shadow-lg z-50">
               <div className="container mx-auto px-4 py-3">
                 <nav className="flex flex-col space-y-4">
                   <Link href="/" className="text-gray-800 font-medium">الرئيسية</Link>
@@ -328,11 +328,11 @@ export default function Home() {
           )}
         </header>
 
-        <main dir="rtl" className="pb-20">
+        <main className="pb-20">
           {/* Mobile Hero Banner */}
           <section className="relative bg-gradient-to-r from-orange-500 to-orange-600 text-white pt-16 pb-12 px-4">
             <div className="container mx-auto">
-              <h1 dir="ltr" className="text-2xl font-bold mb-3 text-right"> Alia Market مرحباً بكم في </h1>
+              <h1 className="text-2xl font-bold mb-3"> Alia Market مرحباً بكم في </h1>
               <p className="mb-5">منصة متكاملة للبيع والشراء</p>
               <Link 
                 href="/categories"
@@ -344,13 +344,13 @@ export default function Home() {
           </section>
 
           {/* Categories Scroll */}
-          <section dir="ltr" className="py-4 px-4 bg-white sticky top-14 z-30 shadow-sm">
+          <section className="py-4 px-4 bg-white sticky top-14 z-30 shadow-sm">
             <div className="flex space-x-3 overflow-x-auto pb-2 hide-scrollbar">
               {mobileCategories.map(category => (
                 <button
                   key={category.id}
                   onClick={() => setActiveCategory(category.id)}
-                  className={`flex flex-col items-center justify-center px-6 py-2 rounded-lg whitespace-nowrap ${activeCategory === category.id ? 'bg-orange-100 text-orange-600' : 'bg-gray-100 text-gray-700'}`}
+                  className={`flex flex-col items-center justify-center px-4 py-2 rounded-lg whitespace-nowrap ${activeCategory === category.id ? 'bg-orange-100 text-orange-600' : 'bg-gray-100 text-gray-700'}`}
                 >
                   <span className="text-xl mb-1">{category.icon}</span>
                   <span className="text-sm">{category.name}</span>
@@ -360,7 +360,7 @@ export default function Home() {
           </section>
 
           {/* Products Grid */}
-          <section dir="rtl" className="container mx-auto px-4 py-6">
+          <section className="container mx-auto px-4 py-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-bold text-gray-800">
                 {activeCategory === "all" ? "أحدث المنتجات" : mobileCategories.find(c => c.id === activeCategory)?.name}
@@ -428,7 +428,7 @@ export default function Home() {
           </section>
 
           {/* Random Products Section for Mobile */}
-          <section dir="rtl" className="container mx-auto px-4 py-6 bg-gray-50">
+          <section className="container mx-auto px-4 py-6 bg-gray-50">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-bold text-gray-800">اكتشف منتجات جديدة</h2>
               <Link href="/products" className="text-orange-600 text-sm hover:text-orange-700">
@@ -486,7 +486,7 @@ export default function Home() {
           </section>
 
           {/* Mobile Bottom Navigation */}
-          <nav dir="rtl" className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around items-center py-2 z-40">
+          <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around items-center py-2 z-40">
             <Link href="/" className="flex flex-col items-center text-orange-600">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
@@ -538,27 +538,27 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title dir="rtl">Alia Market - منصة تسوق إلكترونية</title>
+        <title>Alia Market - منصة تسوق إلكترونية</title>
         <meta name="description" content="اكتشف أحدث المنتجات من أفضل البائعين ضمن فئات متنوعة" />
       </Head>
 
       {/* Desktop Header */}
       <header className="sticky top-0 z-40 bg-blue-900 text-white shadow-lg">
-        <div dir="rtl" className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
           <Link href="/" className="text-2xl font-bold text-white flex items-center">
-            <span className="ml-4">Alia Market</span>
-            {/* <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-orange-400 ml-2" viewBox="0 0 20 20" fill="currentColor">
+            <span className="ml-2">Alia Market</span>
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-orange-400 ml-2" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M10 2a4 4 0 00-4 4v1H5a1 1 0 00-.994.89l-1 9A1 1 0 004 18h12a1 1 0 00.994-1.11l-1-9A1 1 0 0015 7h-1V6a4 4 0 00-4-4zm2 5V6a2 2 0 10-4 0v1h4zm-6 3a1 1 0 112 0 1 1 0 01-2 0zm7-1a1 1 0 100 2 1 1 0 000-2z" clipRule="evenodd" />
-            </svg> */}
+            </svg>
           </Link>
           
           {/* Desktop Search Bar */}
-          <div dir="rtl" className="flex-1 max-w-xl ">
+          <div className="flex-1 max-w-xl mx-8">
             <div className="relative">
               <input
                 type="text"
                 placeholder="ابحث عن منتجك المفضل"
-                className="w-full pr-10 pl-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-black "
+                className="w-full pr-10 pl-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-center"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -571,22 +571,22 @@ export default function Home() {
           </div>
           
           {/* Desktop Navigation */}
-          <nav dir="rtl" className="hidden md:flex items-stretch space-x-8 mr-10">
-            <Link href="/" className="text-white hover:text-orange-300 font-medium transition ml-5 ">الرئيسية</Link>
+          <nav className="hidden md:flex items-center space-x-8">
+            <Link href="/" className="text-white hover:text-orange-300 font-medium transition">الرئيسية</Link>
             <Link href="/categories" className="text-white hover:text-orange-300 font-medium transition">الفئات</Link>
             <Link href="/offers" className="text-white hover:text-orange-300 font-medium transition">العروض</Link>
             <Link href="/account" className="text-white hover:text-orange-300 font-medium transition">حسابي</Link>
           </nav>
           
           {/* Desktop Cart */}
-          <div className="flex items-center   ">
+          <div className="flex items-center space-x-6 ml-5">
             <Link href="/cart" className="relative text-white hover:text-orange-300 transition">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 ml-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
               </svg>
               <span className="absolute -top-2 -right-2 bg-orange-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold">3</span>
             </Link>
-            <Link href="/login" className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg font-medium transition shadow-md ml-8">
+            <Link href="/login" className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg font-medium transition shadow-md">
               تسجيل الدخول
             </Link>
           </div>
@@ -680,7 +680,7 @@ export default function Home() {
             <div className="absolute top-0 left-0 w-full h-full bg-[url('/pattern.svg')] bg-repeat"></div>
           </div>
           <div className="max-w-4xl mx-auto relative z-10">
-            <h1 dir="rtl" className="text-4xl md:text-5xl font-bold mb-6 leading-tight">
+            <h1 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">
               مرحباً بكم في <span className="text-orange-200">Alia Market</span>
             </h1>
             <p className="text-xl md:text-2xl mb-8 text-orange-100 max-w-2xl mx-auto">
@@ -704,7 +704,7 @@ export default function Home() {
         </section>
 
         {/* Categories Section */}
-        <section dir="rtl" id="categories" className="py-20 px-6 bg-white">
+        <section id="categories" className="py-20 px-6 bg-white">
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-14">
               <h2 className="text-3xl font-bold mb-3 text-blue-900">تصفح حسب الفئة</h2>
@@ -737,7 +737,7 @@ export default function Home() {
         </section>
 
         {/* Products Section */}
-        <section dir="rtl" id="products" className="py-20 px-6 bg-gray-50">
+        <section id="products" className="py-20 px-6 bg-gray-50">
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-14">
               <h2 className="text-3xl font-bold mb-3 text-blue-900">الأكثر مبيعاً</h2>
@@ -745,7 +745,7 @@ export default function Home() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
               {desktopBestsellingProducts.map((product, index) => (
-              <Link href="product" key={index}>  <div
+                <div
                   key={index}
                   className="group bg-white rounded-xl shadow-md hover:shadow-xl transition overflow-hidden border border-gray-100"
                 >
@@ -797,14 +797,14 @@ export default function Home() {
                       أضف للسلة
                     </button>
                   </div>
-                </div> </Link>
+                </div>
               ))}
             </div>
           </div>
         </section>
 
         {/* Random Products Section */}
-        <section dir="rtl" className="py-20 px-6 bg-orange-50">
+        <section className="py-20 px-6 bg-orange-50">
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-14">
               <h2 className="text-3xl font-bold mb-3 text-blue-900">اكتشف منتجات متنوعة</h2>
@@ -868,7 +868,7 @@ export default function Home() {
             <div className="absolute top-0 left-0 w-full h-full bg-[url('/pattern-dark.svg')] bg-repeat"></div>
           </div>
           <div className="max-w-4xl mx-auto relative z-10">
-            <h2 dir="rtl" className="text-3xl font-bold mb-6">جاهز لبدء رحلتك مع Alia Market؟</h2>
+            <h2 className="text-3xl font-bold mb-6">جاهز لبدء رحلتك مع Alia Market؟</h2>
             <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
               سجل الآن واحصل على خصم 10% على أول عملية شراء
             </p>
@@ -891,9 +891,9 @@ export default function Home() {
 
         {/* Footer */}
         <footer className="bg-blue-900 text-white py-12 px-6">
-          <div dir="rtl" className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
+          <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
             <div>
-              <h3 dir="rtl" className="text-xl font-bold mb-4">Alia Market</h3>
+              <h3 className="text-xl font-bold mb-4">Alia Market</h3>
               <p className="text-blue-200">
                 منصة رائدة في التجارة الإلكترونية تقدم أفضل الحلول للبائعين والمشترين
               </p>
@@ -916,7 +916,7 @@ export default function Home() {
                 <li><a href="/privacy" className="hover:text-white transition">الخصوصية</a></li>
               </ul>
             </div>
-            <div dir="rtl">
+            <div>
               <h4 className="font-bold mb-4">تواصل معنا</h4>
               <div className="flex gap-4 mb-4">
                 <a href="#" className="bg-blue-800 hover:bg-orange-500 w-10 h-10 rounded-full flex items-center justify-center transition">
@@ -938,12 +938,12 @@ export default function Home() {
                   </svg>
                 </a>
               </div>
-              <p dir="rtl" className="text-blue-200">البريد الإلكتروني: info@aliamarket.com</p>
-              <p dir="rtl" className="text-blue-200">الهاتف: <span dir="ltr">+963 123 456 789</span></p>
+              <p className="text-blue-200">البريد الإلكتروني: info@aliamarket.com</p>
+              <p className="text-blue-200">الهاتف: +963 123 456 789</p>
             </div>
           </div>
           <div className="border-t border-blue-800 mt-12 pt-8 text-center text-blue-300">
-            <p dir="rtl">© {new Date().getFullYear()} Alia Market. جميع الحقوق محفوظة</p>
+            <p>© {new Date().getFullYear()} Alia Market. جميع الحقوق محفوظة</p>
           </div>
         </footer>
       </main>
