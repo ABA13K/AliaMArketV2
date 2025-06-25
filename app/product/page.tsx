@@ -5,7 +5,7 @@ import Head from "next/head";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-
+import { useCart } from "../context/CartContext";
 // Custom SVG icons
 const ArrowLeftIcon = () => (
   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -44,6 +44,8 @@ const ChevronRightIcon = () => (
 );
 
 const ProductDetailPage = () => {
+  const { addToCart } = useCart();
+
   const router = useRouter();
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
@@ -59,8 +61,9 @@ const [selectedSize, setSelectedSize] = useState<string | null>(null);
 
   const product = 
   {
+    id: "apple-watch-series-7", // Make sure this is a string or number
     name: "ساعة ذكية ماركة أبل - الجيل السابع",
-    description: "ساعة ذكية متطورة بشاشة Retina دقيقة، مقاومة للماء حتى عمق 50 متراً، تتبع اللياقة البدنية بدقة، اتصال بلوتوث 5.0، تدعم آلاف التطبيقات الذكية. تأتي مع شاحن سريع وشريط قابل للتعديل.",
+    description: "ساعة ذكية متطورة بشاشة Retina دقيقة...",
     price: "1,250,000 ل.س",
     oldPrice: "1,500,000 ل.س",
     discount: 15,
@@ -124,6 +127,8 @@ const [selectedSize, setSelectedSize] = useState<string | null>(null);
       },
     ]
   };
+  
+  
 
   // Image navigation
   const handlePrevImage = () => {
@@ -157,6 +162,7 @@ const [selectedSize, setSelectedSize] = useState<string | null>(null);
     const walk = (x - startX) * 2;
     sliderRef.current.scrollLeft = scrollLeft - walk;
   };
+ 
   
   // Touch events for mobile
   const handleTouchStart = (e: TouchEvent | React.TouchEvent) => {
@@ -200,11 +206,25 @@ const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const decreaseQuantity = () => quantity > 1 && setQuantity(prev => prev - 1);
 
   // Add to cart
-  const addToCart = () => {
+  const handleAddToCart = () => {
     if (!selectedColor || !selectedSize) {
       alert("يرجى اختيار اللون والمقاس قبل الإضافة للسلة");
       return;
     }
+  
+    const cartItem = {
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      img: product.images[0],
+      quantity: quantity,
+      color: selectedColor,
+      size: selectedSize,
+      oldPrice: product.oldPrice || "",
+      category: "electronics"
+    };
+  
+    addToCart(cartItem);
     alert(`تمت إضافة ${quantity} من ${product.name} إلى سلة التسوق`);
   };
 
@@ -489,14 +509,14 @@ const [selectedSize, setSelectedSize] = useState<string | null>(null);
               
               {/* Action buttons */}
               <div className="flex flex-col sm:flex-row gap-3 pt-4">
-                <button 
-                  onClick={addToCart}
-                  className="flex-1 bg-orange-500 hover:bg-orange-600 text-white py-3 px-6 rounded-lg font-medium transition flex items-center justify-center gap-2 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                  disabled={!selectedColor || !selectedSize}
-                >
-                  <ShoppingCartIcon />
-                  أضف إلى السلة
-                </button>
+              <button 
+      onClick={handleAddToCart}
+      className="flex-1 bg-orange-500 hover:bg-orange-600 text-white py-3 px-6 rounded-lg font-medium transition flex items-center justify-center gap-2 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+      disabled={!selectedColor || !selectedSize}
+    >
+      <ShoppingCartIcon />
+      أضف إلى السلة
+    </button>
                 <button 
                   onClick={buyNow}
                   className="flex-1 bg-navy-700 hover:bg-navy-800 text-white py-3 px-6 rounded-lg font-medium transition shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
