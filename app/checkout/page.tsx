@@ -8,7 +8,7 @@ import Link from "next/link";
 export default function CheckoutPage() {
   const { cart, cartTotal, clearCart } = useCart();
 
-  const formatPrice = (price) => {
+  const formatPrice = (price:number) => {
     return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") + " ل.س";
   };
 
