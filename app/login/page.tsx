@@ -1,37 +1,86 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import api, { setAuthToken, LoginResponse } from "../lib/api";
+import { AxiosError } from "axios";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [focusedField, setFocusedField] = useState("");
+  const router = useRouter();
 
-  const handleSubmit = async (e:any) => {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
+  const [email, setEmail] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
+  const [error, setError] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(false);
+  const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [focusedField, setFocusedField] = useState<"email" | "password" | "">("");
 
-    try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // For demo purposes, redirect if email/password isn't empty
-      if (email && password) {
-        // Success animation could go here
-        alert("تم تسجيل الدخول بنجاح!");
-      } else {
-        setError("الرجاء إدخال البريد الإلكتروني وكلمة المرور");
-      }
-    } catch (err) {
-      setError("حدث خطأ أثناء تسجيل الدخول. الرجاء المحاولة مرة أخرى.");
-    } finally {
-      setLoading(false);
+  // Check if already logged in
+  useEffect(() => {
+    if (localStorage.getItem("token")) {
+      router.replace("/dashboard");
     }
-  };
+  }, [router]);
+
+  // at the top of your file:
+function getCookie(name: string): string | undefined {
+  const match = document.cookie.match(new RegExp(`(^|; )${name}=([^;]+)`));
+  return match ? decodeURIComponent(match[2]) : undefined;
+}
+
+const handleSubmit = async (
+  e: React.FormEvent<HTMLFormElement> | React.MouseEvent<HTMLButtonElement>
+) => {
+  e.preventDefault();
+  setError("");
+  setLoading(true);
+
+  try {
+    // 1️⃣ Proxy to /sanctum/csrf-cookie via next.config.js
+    const csrfRes = await fetch("https://mahmoudmohammed.site/sanctum/csrf-cookie", {
+      method: "GET",
+      credentials: "include",
+      headers: { Accept: "application/json" },
+    });
+    if (!csrfRes.ok) {
+      throw new Error(`Failed to fetch CSRF cookie: ${csrfRes.statusText}`);
+    }
+
+    // 2️⃣ Pull the XSRF token from the cookie
+    const xsrfToken = getCookie("XSRF-TOKEN");
+
+    // 3️⃣ Send credentials with X-XSRF-TOKEN
+    const res = await fetch("https://mahmoudmohammed.site/login", {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        "X-Requested-With": "XMLHttpRequest",
+        "X-XSRF-TOKEN": "eyJpdiI6IlA0Z1duNVJ2TkFkL1o5VkxlQk96NHc9PSIsInZhbHVlIjoiOVRBZkpwaGY3UEUwalJVQXRpcW83WVNOU0M4cWFpTEJ2UWFTNHBhM2tJQUoybVdaNEJML2NmSi94MXRBVGZkVTNsZXVGTkFtZjQ3TE4vK2F3U0hWZCt6SVdvWmRuK3JCK3FLVEVUa0tSV29tbU0zTnZUUnEwWGlvTDFJQVNqSWsiLCJtYWMiOiI1NjY4Mjc1ZGJiMWVkZDEzZDViODk5MDJiZWQxYTkyODAxNjY1MjVkMGE2YjYzNzQ1NDBkNDJhZjViYWE4MTIxIiwidGFnIjoiIn0=" ,
+      },
+      body: JSON.stringify({ email, password }),
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || res.statusText);
+    }
+
+    // 4️⃣ Store token and redirect
+    if (data.token) {
+      localStorage.setItem("token", data.token);
+      setAuthToken(data.token);
+    }
+    router.push("/");
+  } catch (err: any) {
+    setError(err.message || "حدث خطأ أثناء تسجيل الدخول.");
+  } finally {
+    setLoading(false);
+  }
+};
+
+
 
   return (
     <div dir="rtl" className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-orange-50 flex items-center justify-center px-4 sm:px-6 lg:px-8">
