@@ -16,23 +16,8 @@ export default function Home() {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const { cartCount } = useCart();
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loadingCategories, setLoadingCategories] = useState(true);
-  const [errorCategories, setErrorCategories] = useState<string | null>(null);
   const { addToCart } = useCart();
-  interface ApiCategory {
-    id: number;
-    name: string;
-    img: string;
-    products_count: number;
-  }
-  interface Category {
-    id: string;
-    name: string;
-    icon?: string;
-    img?: string;
-    count?: string;
-  }
+
   // Combine all products for search
  
   // Search function
@@ -50,36 +35,6 @@ export default function Home() {
     );
     setSearchResults(results);
   };
-  useEffect(() => {
-    async function fetchCategories() {
-      try {
-        const res = await fetch("https://mahmoudmohammed.site/api/public/home-page/main-categorical");
-        if (!res.ok) {
-          throw new Error(`Failed to fetch categories: ${res.statusText}`);
-        }
-        const result = await res.json();
-        // Extract array from "data" field
-        const apiCats: ApiCategory[] = result.data;
-        if (!Array.isArray(apiCats)) {
-          throw new Error("Invalid categories format");
-        }
-        // Map to our local Category shape
-        const cats: Category[] = apiCats.map(cat => ({
-          id: cat.id.toString(),
-          name: cat.name,
-          img: cat.img,
-          count: `${cat.products_count} منتج`,
-        }));
-        console.log(cats)
-        setCategories(cats);
-      } catch (err: any) {
-        setErrorCategories(err.message);
-      } finally {
-        setLoadingCategories(false);
-      }
-    }
-    fetchCategories();
-  }, []);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -868,52 +823,36 @@ export default function Home() {
 
         {/* قسم الفئات */}
         <section dir="rtl" id="categories" className="py-20 px-6 bg-white">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-blue-900">تصفح حسب الفئة</h2>
-            <p className="mt-2 text-gray-500">
-              اكتشف آلاف المنتجات من مختلف الفئات
-            </p>
-          </div>
-
-          {loadingCategories ? (
-            <p className="text-center">جاري تحميل الفئات...</p>
-          ) : errorCategories ? (
-            <p className="text-center text-red-600">{errorCategories}</p>
-          ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-              {categories.map(cat => (
-                <Link key={cat.id} href={`/categories/${cat.id}`}>
-                  <div className="relative bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition">
-                    { 
-                    cat.img &&  (
-                      <div className="h-48 overflow-hidden">
-                        <Image
-                          src={cat.img}
-                          alt={cat.name}
-                          width={320}
-                          height={200}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                        />
-                      </div>
-                    )}
-                    <div className="p-6">
-                      <h3 className="text-xl font-bold text-gray-800 mb-1">
-                        {cat.name}
-                      </h3>
-                      {cat.count && (
-                        <p className="text-sm text-gray-500">
-                          {cat.count}
-                        </p>
-                      )}
-                    </div>
+          <div className="max-w-7xl mx-auto">
+            <div className="text-center mb-14">
+              <h2 className="text-3xl font-bold mb-3 text-blue-900">تصفح حسب الفئة</h2>
+              <p className="text-gray-500 max-w-2xl mx-auto">اكتشف آلاف المنتجات من مختلف الفئات</p>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              {desktopCategories.map((cat, index) => (
+                <div
+                  key={index}
+                  className="group bg-white rounded-2xl shadow-md hover:shadow-xl transition overflow-hidden relative cursor-pointer"
+                >
+                  <div className="relative h-48 overflow-hidden">
+                    <Image
+                      src={cat.img}
+                      alt={cat.name}
+                      width={300}
+                      height={200}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
                   </div>
-                </Link>
+                  <div className="p-5 absolute bottom-0 left-0 right-0">
+                    <h3 className="font-bold text-xl text-white mb-1">{cat.name}</h3>
+                    <p className="text-sm text-gray-200">{cat.count}</p>
+                  </div>
+                </div>
               ))}
             </div>
-          )}
-        </div>
-      </section>
+          </div>
+        </section>
 
         {/* قسم المنتجات الأكثر مبيعاً */}
         <section dir="rtl" id="products" className="py-20 px-6 bg-gray-50">
