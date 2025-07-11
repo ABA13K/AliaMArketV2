@@ -14,7 +14,7 @@ const nextConfig: NextConfig = {
       // Proxy login route
       {
         source: '/login',
-        destination: 'https://mahmoudmohammed.site/api/login',
+        destination: 'https://mahmoudmohammed.site/login',
       },
       // Proxy all other API routes
       {

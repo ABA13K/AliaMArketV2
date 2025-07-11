@@ -16,8 +16,17 @@ export default function Home() {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const { cartCount } = useCart();
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loadingCategories, setLoadingCategories] = useState(true);
+  const [errorCategories, setErrorCategories] = useState<string | null>(null);
   const { addToCart } = useCart();
-
+  const [bestsellingProducts, setBestsellingProducts] = useState<BestsellingProduct[]>([]);
+const [loadingBestselling, setLoadingBestselling] = useState(true);
+const [errorBestselling, setErrorBestselling] = useState<string | null>(null);
+const [randomProducts, setRandomProducts] = useState<any[]>([]);
+const [loadingRandom, setLoadingRandom] = useState(true);
+const [errorRandom, setErrorRandom] = useState<string | null>(null);
+  
   // Combine all products for search
  
   // Search function
@@ -35,6 +44,113 @@ export default function Home() {
     );
     setSearchResults(results);
   };
+  interface Category {
+    id: number;
+    name: string;
+    image: string;
+    products_count: number;
+  }
+  interface BestsellingProduct {
+    id: number;
+    name: string;
+    original_price: string;
+    discount_percentage: number;
+    price_after_discount: string;
+    total_rating: number;
+    image: string;
+  }
+  
+  // Update your state
+  
+  // Update your fetch function
+  useEffect(() => {
+    async function fetchRandomProducts() {
+      try {
+        setLoadingRandom(true);
+        setErrorRandom(null);
+        
+        const res = await fetch('https://mahmoudmohammed.site/api/public/home-page/products/random');
+        
+        if (!res.ok) {
+          throw new Error(`Failed to fetch random products: ${res.statusText}`);
+        }
+        
+        const response = await res.json();
+        
+        if (response.data && Array.isArray(response.data)) {
+          setRandomProducts(response.data);
+        } else {
+          throw new Error('Invalid data format from API');
+        }
+      } catch (err: any) {
+        setErrorRandom(err.message);
+        console.error('Error fetching random products:', err);
+      } finally {
+        setLoadingRandom(false);
+      }
+    }
+    
+    fetchRandomProducts();
+  }, []);
+  useEffect(() => {
+    async function fetchBestsellingProducts() {
+      try {
+        setLoadingBestselling(true);
+        setErrorBestselling(null);
+        
+        const res = await fetch('https://mahmoudmohammed.site/api/public/home-page/products/top-selling');
+        
+        if (!res.ok) {
+          throw new Error(`Failed to fetch bestselling products: ${res.statusText}`);
+        }
+        
+        const response = await res.json();
+        
+        if (response.data && Array.isArray(response.data)) {
+          setBestsellingProducts(response.data);
+        } else {
+          throw new Error('Invalid data format from API');
+        }
+      } catch (err: any) {
+        setErrorBestselling(err.message);
+        console.error('Error fetching bestselling products:', err);
+      } finally {
+        setLoadingBestselling(false);
+      }
+    }
+    
+    fetchBestsellingProducts();
+  }, []);
+  useEffect(() => {
+    async function fetchCategories() {
+      try {
+        setLoadingCategories(true);
+        setErrorCategories(null);
+        
+        const res = await fetch('https://mahmoudmohammed.site/api/public/home-page/main-categorical');
+        
+        if (!res.ok) {
+          throw new Error(`Failed to fetch categories: ${res.statusText}`);
+        }
+        
+        const response = await res.json();
+        
+        // Handle the API response structure
+        if (response.data && Array.isArray(response.data)) {
+          setCategories(response.data);
+        } else {
+          throw new Error('Invalid data format from API');
+        }
+      } catch (err: any) {
+        setErrorCategories(err.message);
+        console.error('Error fetching categories:', err);
+      } finally {
+        setLoadingCategories(false);
+      }
+    }
+    
+    fetchCategories();
+  }, []);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -823,172 +939,281 @@ export default function Home() {
 
         {/* قسم الفئات */}
         <section dir="rtl" id="categories" className="py-20 px-6 bg-white">
-          <div className="max-w-7xl mx-auto">
-            <div className="text-center mb-14">
-              <h2 className="text-3xl font-bold mb-3 text-blue-900">تصفح حسب الفئة</h2>
-              <p className="text-gray-500 max-w-2xl mx-auto">اكتشف آلاف المنتجات من مختلف الفئات</p>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {desktopCategories.map((cat, index) => (
-                <div
-                  key={index}
-                  className="group bg-white rounded-2xl shadow-md hover:shadow-xl transition overflow-hidden relative cursor-pointer"
-                >
-                  <div className="relative h-48 overflow-hidden">
-                    <Image
-                      src={cat.img}
-                      alt={cat.name}
-                      width={300}
-                      height={200}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-                  </div>
-                  <div className="p-5 absolute bottom-0 left-0 right-0">
-                    <h3 className="font-bold text-xl text-white mb-1">{cat.name}</h3>
-                    <p className="text-sm text-gray-200">{cat.count}</p>
-                  </div>
-                </div>
-              ))}
+  <div className="max-w-7xl mx-auto">
+    <div className="text-center mb-14">
+      <h2 className="text-3xl font-bold mb-3 text-blue-900">تصفح حسب الفئة</h2>
+      <p className="text-gray-500 max-w-2xl mx-auto">اكتشف آلاف المنتجات من مختلف الفئات</p>
+    </div>
+
+    {loadingCategories ? (
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        {[...Array(4)].map((_, index) => (
+          <div key={index} className="bg-white rounded-2xl shadow-md overflow-hidden animate-pulse">
+            <div className="h-48 bg-gray-200"></div>
+            <div className="p-5">
+              <div className="h-6 bg-gray-200 rounded w-3/4 mb-2"></div>
+              <div className="h-4 bg-gray-200 rounded w-1/2"></div>
             </div>
           </div>
-        </section>
+        ))}
+      </div>
+    ) : errorCategories ? (
+      <div className="text-center py-8">
+        <p className="text-red-500 mb-4">{errorCategories}</p>
+        <button
+          onClick={() => window.location.reload()}
+          className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg"
+        >
+          حاول مرة أخرى
+        </button>
+      </div>
+    ) : (
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        {categories.map((category) => (
+          <Link
+            key={category.id}
+            href={`/categories/${category.id}`}
+            className="group bg-white rounded-2xl shadow-md hover:shadow-xl transition overflow-hidden relative cursor-pointer"
+          >
+            <div className="relative h-48 overflow-hidden">
+              <Image
+                src={category.image || '/placeholder-category.jpg'}
+                alt={category.name}
+                width={300}
+                height={200}
+                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                onError={(e) => {
+                  e.currentTarget.src = '/placeholder-category.jpg';
+                }}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+            </div>
+            <div className="p-5 absolute bottom-0 left-0 right-0">
+              <h3 className="font-bold text-xl text-white mb-1">{category.name}</h3>
+              <p className="text-sm text-gray-200">{category.products_count} منتج</p>
+            </div>
+          </Link>
+        ))}
+      </div>
+    )}
+  </div>
+</section>
 
         {/* قسم المنتجات الأكثر مبيعاً */}
         <section dir="rtl" id="products" className="py-20 px-6 bg-gray-50">
-          <div className="max-w-7xl mx-auto">
-            <div className="text-center mb-14">
-              <h2 className="text-3xl font-bold mb-3 text-blue-900">الأكثر مبيعاً</h2>
-              <p className="text-gray-500 max-w-2xl mx-auto">المنتجات الأكثر طلباً من عملائنا</p>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-              {desktopBestsellingProducts.map((product, index) => (
-                <div key={index} className="group bg-white rounded-xl shadow-md hover:shadow-xl transition overflow-hidden border border-gray-100">
-                  <Link href="/product" className="block">
-                    <div className="relative h-60 overflow-hidden">
-                      <Image
-                        src={product.img}
-                        alt={product.name}
-                        width={300}
-                        height={300}
-                        className="w-full h-full object-contain p-4 transition-transform duration-300 group-hover:scale-105"
-                      />
-                      {product.oldPrice && (
-                        <span className="absolute top-3 left-3 bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded">
-                          خصم {Math.round(((parseFloat(product.oldPrice.replace(/[^\d]/g, '')) - parseFloat(product.price.replace(/[^\d]/g, ''))) / parseFloat(product.oldPrice.replace(/[^\d]/g, '')) * 100))}
-                        </span>
-                      )}
-                      <button className="absolute top-3 right-3 bg-white/80 hover:bg-white rounded-full w-8 h-8 flex items-center justify-center shadow-sm transition">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                        </svg>
-                      </button>
-                    </div>
-                    <div className="p-5">
-                      <div className="flex items-center gap-1 mb-2">
-                        {[...Array(5)].map((_, i) => (
-                          <svg 
-                            key={i}
-                            xmlns="http://www.w3.org/2000/svg" 
-                            className={`h-4 w-4 ${i < Math.floor(product.rating) ? 'text-yellow-400' : 'text-gray-300'}`} 
-                            viewBox="0 0 20 20" 
-                            fill="currentColor"
-                          >
-                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                          </svg>
-                        ))}
-                        <span className="text-xs text-gray-500">({product.rating})</span>
-                      </div>
-                      <h3 className="font-semibold text-lg text-gray-800 mb-1">{product.name}</h3>
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-orange-600">{product.price}</span>
-                        {product.oldPrice && (
-                          <span className="text-sm text-gray-400 line-through">{product.oldPrice}</span>
-                        )}
-                      </div>
-                      <button 
-                        onClick={(e) => {
-                          e.preventDefault();
-                          handleAddToCart(product);
-                        }}
-                        className="w-full mt-4 bg-orange-500 hover:bg-orange-600 text-white py-2 rounded-lg font-medium transition flex items-center justify-center gap-2"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                        </svg>
-                        أضف للسلة
-                      </button>
-                    </div>
-                  </Link>
-                </div>
-              ))}
+  <div className="max-w-7xl mx-auto">
+    <div className="text-center mb-14">
+      <h2 className="text-3xl font-bold mb-3 text-blue-900">الأكثر مبيعاً</h2>
+      <p className="text-gray-500 max-w-2xl mx-auto">المنتجات الأكثر طلباً من عملائنا</p>
+    </div>
+
+    {loadingBestselling ? (
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+        {[...Array(4)].map((_, index) => (
+          <div key={index} className="bg-white rounded-xl shadow-md overflow-hidden animate-pulse">
+            <div className="h-60 bg-gray-200"></div>
+            <div className="p-5">
+              <div className="h-6 bg-gray-200 rounded w-3/4 mb-2"></div>
+              <div className="h-4 bg-gray-200 rounded w-1/2 mb-3"></div>
+              <div className="h-8 bg-gray-200 rounded"></div>
             </div>
           </div>
-        </section>
+        ))}
+      </div>
+    ) : errorBestselling ? (
+      <div className="text-center py-8">
+        <p className="text-red-500 mb-4">{errorBestselling}</p>
+        <button
+          onClick={() => window.location.reload()}
+          className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg"
+        >
+          حاول مرة أخرى
+        </button>
+      </div>
+    ) : (
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+        {bestsellingProducts.map((product) => (
+          <div key={product.id} className="group bg-white rounded-xl shadow-md hover:shadow-xl transition overflow-hidden border border-gray-100">
+            <Link href={`/product/${product.id}`} className="block">
+              <div className="relative h-60 overflow-hidden">
+                <Image
+                  src={product.image || '/placeholder-product.jpg'}
+                  alt={product.name}
+                  width={300}
+                  height={300}
+                  className="w-full h-full object-contain p-4 transition-transform duration-300 group-hover:scale-105"
+                  onError={(e) => {
+                    e.currentTarget.src = '/placeholder-product.jpg';
+                  }}
+                />
+                {product.discount_percentage > 0 && (
+                  <span className="absolute top-3 left-3 bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded">
+                    خصم {product.discount_percentage}%
+                  </span>
+                )}
+                <button className="absolute top-3 right-3 bg-white/80 hover:bg-white rounded-full w-8 h-8 flex items-center justify-center shadow-sm transition">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                  </svg>
+                </button>
+              </div>
+              <div className="p-5">
+                <div className="flex items-center gap-1 mb-2">
+                  {[...Array(5)].map((_, i) => (
+                    <svg 
+                      key={i}
+                      xmlns="http://www.w3.org/2000/svg" 
+                      className={`h-4 w-4 ${i < Math.floor(product.total_rating) ? 'text-yellow-400' : 'text-gray-300'}`} 
+                      viewBox="0 0 20 20" 
+                      fill="currentColor"
+                    >
+                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                    </svg>
+                  ))}
+                  <span className="text-xs text-gray-500">({product.total_rating})</span>
+                </div>
+                <h3 className="font-semibold text-lg text-gray-800 mb-1">{product.name}</h3>
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-orange-600">{product.price_after_discount} ل.س</span>
+                  {product.discount_percentage > 0 && (
+                    <span className="text-sm text-gray-400 line-through">{product.original_price} ل.س</span>
+                  )}
+                </div>
+                <button 
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleAddToCart({
+                      id: product.id,
+                      name: product.name,
+                      price: product.price_after_discount,
+                      oldPrice: product.discount_percentage > 0 ? product.original_price : undefined,
+                      img: product.image,
+                      quantity: 1
+                    });
+                  }}
+                  className="w-full mt-4 bg-orange-500 hover:bg-orange-600 text-white py-2 rounded-lg font-medium transition flex items-center justify-center gap-2"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                  أضف للسلة
+                </button>
+              </div>
+            </Link>
+          </div>
+        ))}
+      </div>
+    )}
+  </div>
+</section>
 
         {/* قسم المنتجات العشوائية */}
         <section dir="rtl" className="py-20 px-6 bg-orange-50">
-          <div className="max-w-7xl mx-auto">
-            <div className="text-center mb-14">
-              <h2 className="text-3xl font-bold mb-3 text-blue-900">اكتشف منتجات متنوعة</h2>
-              <p className="text-gray-500 max-w-2xl mx-auto">مجموعة مختارة من منتجات متنوعة لتلبية جميع احتياجاتك</p>
+  <div className="max-w-7xl mx-auto">
+    <div className="text-center mb-14">
+      <h2 className="text-3xl font-bold mb-3 text-blue-900">اكتشف منتجات متنوعة</h2>
+      <p className="text-gray-500 max-w-2xl mx-auto">مجموعة مختارة من منتجات متنوعة لتلبية جميع احتياجاتك</p>
+    </div>
+
+    {loadingRandom ? (
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+        {[...Array(4)].map((_, index) => (
+          <div key={index} className="bg-white rounded-xl shadow-md overflow-hidden animate-pulse">
+            <div className="h-60 bg-gray-200"></div>
+            <div className="p-5">
+              <div className="h-6 bg-gray-200 rounded w-3/4 mb-2"></div>
+              <div className="h-4 bg-gray-200 rounded w-1/2 mb-3"></div>
+              <div className="h-8 bg-gray-200 rounded"></div>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-              {desktopRandomProducts.map((product, index) => (
-                <div key={index} className="group bg-white rounded-xl shadow-md hover:shadow-xl transition overflow-hidden border border-gray-100">
-                  <Link               href="/product" className="block">
-                <div className="relative h-60 overflow-hidden">
-                  <Image
-                    src={product.img}
-                    alt={product.name}
-                    width={300}
-                    height={300}
-                    className="w-full h-full object-contain p-4 transition-transform duration-300 group-hover:scale-105"
-                  />
-                  <button className="absolute top-3 right-3 bg-white/80 hover:bg-white rounded-full w-8 h-8 flex items-center justify-center shadow-sm transition">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                    </svg>
-                  </button>
-                </div>
-                <div className="p-5">
-                  <div className="flex items-center gap-1 mb-2">
-                    {[...Array(5)].map((_, i) => (
-                      <svg 
-                        key={i}
-                        xmlns="http://www.w3.org/2000/svg"
-                        className={`h-4 w-4 ${i < Math.floor(product.rating) ? 'text-yellow-400' : 'text-gray-300'}`}
-                        viewBox="0 0 20 20"
-                        fill="currentColor"
-                      >
-                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                      </svg>
-                    ))}
-                    <span className="text-xs text-gray-500">({product.rating})</span>
-                  </div>
-                  <h3 className="font-semibold text-lg text-gray-800 mb-1">{product.name}</h3>
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-orange-500">{product.price}</span>
-                  </div>
-                  <button 
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handleAddToCart(product);
-                    }}
-                    className="w-full mt-4 bg-orange-500 hover:bg-orange-600 text-white py-2 rounded-lg font-medium transition flex items-center justify-center gap-2"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                    </svg>
-                    أضف للسلة
-                  </button>
-                </div>
-              </Link>
-            </div>
-          ))}
-        </div>
+          </div>
+        ))}
       </div>
-    </section>
+    ) : errorRandom ? (
+      <div className="text-center py-8">
+        <p className="text-red-500 mb-4">{errorRandom}</p>
+        <button
+          onClick={() => window.location.reload()}
+          className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg"
+        >
+          حاول مرة أخرى
+        </button>
+      </div>
+    ) : (
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+        {randomProducts.map((product) => (
+          <div key={product.id} className="group bg-white rounded-xl shadow-md hover:shadow-xl transition overflow-hidden border border-gray-100">
+            <Link href={`/product/${product.id}`} className="block">
+              <div className="relative h-60 overflow-hidden">
+                <Image
+                  src={product.image || '/placeholder-product.jpg'}
+                  alt={product.name}
+                  width={300}
+                  height={300}
+                  className="w-full h-full object-contain p-4 transition-transform duration-300 group-hover:scale-105"
+                  onError={(e) => {
+                    e.currentTarget.src = '/placeholder-product.jpg';
+                  }}
+                />
+                {product.discount_percentage > 0 && (
+                  <span className="absolute top-3 left-3 bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded">
+                    خصم {product.discount_percentage}%
+                  </span>
+                )}
+                <button className="absolute top-3 right-3 bg-white/80 hover:bg-white rounded-full w-8 h-8 flex items-center justify-center shadow-sm transition">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                  </svg>
+                </button>
+              </div>
+              <div className="p-5">
+                <div className="flex items-center gap-1 mb-2">
+                  {[...Array(5)].map((_, i) => (
+                    <svg 
+                      key={i}
+                      xmlns="http://www.w3.org/2000/svg" 
+                      className={`h-4 w-4 ${i < Math.floor(product.total_rating) ? 'text-yellow-400' : 'text-gray-300'}`} 
+                      viewBox="0 0 20 20" 
+                      fill="currentColor"
+                    >
+                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                    </svg>
+                  ))}
+                  <span className="text-xs text-gray-500">({product.total_rating})</span>
+                </div>
+                <h3 className="font-semibold text-lg text-gray-800 mb-1">{product.name}</h3>
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-orange-600">{product.price_after_discount} ل.س</span>
+                  {product.discount_percentage > 0 && (
+                    <span className="text-sm text-gray-400 line-through">{product.original_price} ل.س</span>
+                  )}
+                </div>
+                <button 
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleAddToCart({
+                      id: product.id,
+                      name: product.name,
+                      price: product.price_after_discount,
+                      oldPrice: product.discount_percentage > 0 ? product.original_price : undefined,
+                      img: product.image,
+                      quantity: 1
+                    });
+                  }}
+                  className="w-full mt-4 bg-orange-500 hover:bg-orange-600 text-white py-2 rounded-lg font-medium transition flex items-center justify-center gap-2"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                  أضف للسلة
+                </button>
+              </div>
+            </Link>
+          </div>
+        ))}
+      </div>
+    )}
+  </div>
+</section>
 
     {/* قسم الدعوة للعمل */}
     <section className="py-20 px-6 text-center bg-blue-900 text-white relative overflow-hidden">
