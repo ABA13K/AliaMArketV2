@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from 'react-toastify';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -34,7 +35,9 @@ const handleSubmit = async (e: React.FormEvent) => {
       }
 
       // Redirect on success (token is automatically saved in cookie)
+      console.log(data.token)
       router.push('https://alia-m-arket-v2-orpin.vercel.app/');
+      
     } catch (err: any) {
       setError(err.message);
     } finally {
