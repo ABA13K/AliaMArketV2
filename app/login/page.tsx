@@ -22,13 +22,7 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const csrfResponse = await fetch('https://mahmoudmohammed.site/sanctum/csrf-cookie', {
-        credentials: 'include',
-      });
-
-      if (!csrfResponse.ok) {
-        throw new Error('Failed to get CSRF token');
-      }
+    
 
       // Then perform login
       const loginResponse = await fetch('https://mahmoudmohammed.site/api/login', {
