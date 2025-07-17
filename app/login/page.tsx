@@ -62,9 +62,11 @@ export default function LoginPage() {
 
     // Redirect to home page
     if (result?.url) {
-      router.push(result.url); // Or result.url if you want to use the callbackUrl
+      router.push(result.url); 
+      console.log(data.token)// Or result.url if you want to use the callbackUrl
     } else {
-      router.push('/'); // Default redirect if no URL is provided
+      router.push('/');
+       // Default redirect if no URL is provided
     }
   } catch (err: any) {
     setError(err.message || "حدث خطأ أثناء تسجيل الدخول.");
