@@ -36,7 +36,7 @@ const handleSubmit = async (e: React.FormEvent) => {
 
       // Redirect on success (token is automatically saved in cookie)
       console.log(data.token)
-      router.push('https://alia-m-arket-v2-orpin.vercel.app/');
+      // router.push('https://alia-m-arket-v2-orpin.vercel.app/');
       
     } catch (err: any) {
       setError(err.message);
