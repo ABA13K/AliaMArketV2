@@ -51,7 +51,7 @@ const handleSubmit = async (e: React.FormEvent) => {
       await new Promise(resolve => setTimeout(resolve, 3000));
       
       // Redirect
-      router.push('https://alia-m-arket-v2-orpin.vercel.app/');
+      // router.push('https://alia-m-arket-v2-orpin.vercel.app/');
       
     } catch (err: any) {
       setError(err.message);
