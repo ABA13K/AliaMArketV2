@@ -34,7 +34,7 @@ const handleSubmit = async (e: React.FormEvent) => {
       }
 
       // Redirect on success (token is automatically saved in cookie)
-      router.push('https://alia-m-arket-v2-mz94.vercel.app');
+      router.push('https://alia-m-arket-v2-orpin.vercel.app/');
     } catch (err: any) {
       setError(err.message);
     } finally {
