@@ -53,7 +53,7 @@ export default function LoginPage() {
       email,
       password,
       token: data.token, // Pass the token to NextAuth if needed
-      callbackUrl: '/',
+      callbackUrl: 'https://alia-m-arket-v2-mz94.vercel.app',
     });
 
     if (result?.error) {
