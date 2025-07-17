@@ -84,7 +84,7 @@ export default function LoginPage() {
                 </svg>
               </div>
               <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-2">
-                مرحباً بك مرة أخرى
+              1  مرحباً بك مرة أخرى
               </h1>
               <p className="text-gray-600">
                 سجل الدخول للوصول إلى حسابك في Alia Market
