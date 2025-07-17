@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { signIn } from "next-auth/react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -14,61 +13,34 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [focusedField, setFocusedField] = useState<"email" | "password" | "">("");
 
-  const handleSubmit = async (
-  e: React.FormEvent<HTMLFormElement> | React.MouseEvent<HTMLButtonElement>
-) => {
-  e.preventDefault();
-  setError("");
-  setLoading(true);
+const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
 
-  try {
-    // Perform login
-    const loginResponse = await fetch('https://mahmoudmohammed.site/api/login', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
-      body: JSON.stringify({ email, password }),
-    });
+    try {
+      const response = await fetch('/api/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
 
-    const data = await loginResponse.json();
-    console.log(data
+      const data = await response.json();
 
-    );
-    console.log(data.token)
+      if (!response.ok) {
+        throw new Error(data.error || 'Login failed');
+      }
 
-    if (!loginResponse.ok) {
-      throw new Error(data.message || 'Login failed');
+      // Redirect on success (token is automatically saved in cookie)
+      router.push('https://alia-m-arket-v2-mz94.vercel.app');
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
-
-    // Store the token (using localStorage in this example)
-    if (data.token) {
-      localStorage.setItem('authToken', data.token);
-    }
-
-    // If login is successful, use NextAuth to create session
-    const result = await signIn('credentials', {
-      redirect: false,
-      email,
-      password,
-      token: data.token, // Pass the token to NextAuth if needed
-      callbackUrl: 'https://alia-m-arket-v2-mz94.vercel.app',
-    });
-
-    if (result?.error) {
-      throw new Error(result.error);
-    }
-
-    // Redirect to home page
-          console.log(data.token)// Or result.url if you want to use the callbackUrl
-
-  } catch (err: any) {
-    setError(err.message || "حدث خطأ أثناء تسجيل الدخول.");
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   return (
     <div dir="rtl" className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-orange-50 flex items-center justify-center px-4 sm:px-6 lg:px-8">
