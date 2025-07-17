@@ -15,53 +15,63 @@ export default function LoginPage() {
   const [focusedField, setFocusedField] = useState<"email" | "password" | "">("");
 
   const handleSubmit = async (
-    e: React.FormEvent<HTMLFormElement> | React.MouseEvent<HTMLButtonElement>
-  ) => {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
+  e: React.FormEvent<HTMLFormElement> | React.MouseEvent<HTMLButtonElement>
+) => {
+  e.preventDefault();
+  setError("");
+  setLoading(true);
 
-    try {
-    
+  try {
+    // Perform login
+    const loginResponse = await fetch('https://mahmoudmohammed.site/api/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify({ email, password }),
+    });
 
-      // Then perform login
-      const loginResponse = await fetch('https://mahmoudmohammed.site/api/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
+    const data = await loginResponse.json();
+    console.log(data
 
-      const data = await loginResponse.json();
-      console.log(data)
+    );
+    console.log(data.token)
 
-      if (!loginResponse.ok) {
-        throw new Error(data.message || 'Login failed');
-      }
-
-      // If login is successful, use NextAuth to create session
-      const result = await signIn('credentials', {
-        redirect: false,
-        email,
-        password,
-        callbackUrl: '/',
-      });
-
-      if (result?.error) {
-        throw new Error(result.error);
-      }
-
-      if (result?.url) {
-        router.push(result.url);
-      }
-    } catch (err: any) {
-      setError(err.message || "حدث خطأ أثناء تسجيل الدخول.");
-    } finally {
-      setLoading(false);
+    if (!loginResponse.ok) {
+      throw new Error(data.message || 'Login failed');
     }
-  };
+
+    // Store the token (using localStorage in this example)
+    if (data.token) {
+      localStorage.setItem('authToken', data.token);
+    }
+
+    // If login is successful, use NextAuth to create session
+    const result = await signIn('credentials', {
+      redirect: false,
+      email,
+      password,
+      token: data.token, // Pass the token to NextAuth if needed
+      callbackUrl: '/',
+    });
+
+    if (result?.error) {
+      throw new Error(result.error);
+    }
+
+    // Redirect to home page
+    if (result?.url) {
+      router.push('/'); // Or result.url if you want to use the callbackUrl
+    } else {
+      router.push('/'); // Default redirect if no URL is provided
+    }
+  } catch (err: any) {
+    setError(err.message || "حدث خطأ أثناء تسجيل الدخول.");
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div dir="rtl" className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-orange-50 flex items-center justify-center px-4 sm:px-6 lg:px-8">
