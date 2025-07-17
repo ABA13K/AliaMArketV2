@@ -62,7 +62,7 @@ export default function LoginPage() {
 
     // Redirect to home page
     if (result?.url) {
-      router.push('/'); // Or result.url if you want to use the callbackUrl
+      router.push(result.url); // Or result.url if you want to use the callbackUrl
     } else {
       router.push('/'); // Default redirect if no URL is provided
     }
