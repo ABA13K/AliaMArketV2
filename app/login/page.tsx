@@ -34,12 +34,33 @@ const handleSubmit = async (e: React.FormEvent) => {
         throw new Error(data.error || 'Login failed');
       }
 
-      // Redirect on success (token is automatically saved in cookie)
-      console.log(data.token)
-      // router.push('https://alia-m-arket-v2-orpin.vercel.app/');
+      // Show success toast with token
+      toast.success(`Login successful! Token: ${data.token}`, {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+      });
+
+      // Redirect after showing the toast
+      setTimeout(() => {
+        router.push('https://alia-m-arket-v2-orpin.vercel.app/');
+      }, 2000); // Wait 2 seconds before redirecting
       
     } catch (err: any) {
       setError(err.message);
+      toast.error(err.message || 'Login failed', {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+      });
     } finally {
       setLoading(false);
     }
