@@ -36,23 +36,10 @@ const handleSubmit = async (e: React.FormEvent) => {
 
       // Show success toast
       toast.success('تم تسجيل الدخول بنجاح!', {
-        position: "top-right",
-        autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
-        rtl: true,  // Right-to-left for Arabic
-        theme: "colored",
-      });
-
-      // Wait for the toast to show before redirecting
-      await new Promise(resolve => setTimeout(resolve, 3000));
-      
-      // Redirect
-      // router.push('https://alia-m-arket-v2-orpin.vercel.app/');
-      
+  onClose: () => {
+    router.push('https://alia-m-arket-v2-orpin.vercel.app/');
+  }
+});
     } catch (err: any) {
       setError(err.message);
       toast.error(err.message || 'فشل تسجيل الدخول', {
