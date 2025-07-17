@@ -206,7 +206,7 @@ const handleSubmit = async (e: React.FormEvent) => {
             {/* Social Login Buttons */}
             <div className="grid grid-cols-2 gap-4 mb-6">
               <button 
-                onClick={() => signIn("google")}
+                // onClick={() => signIn("google")}
                 className="flex items-center justify-center py-3 px-4 border-2 border-gray-200 rounded-2xl bg-white/50 backdrop-blur-sm hover:bg-white hover:border-gray-300 transition-all duration-300 transform hover:scale-105 group"
               >
                 <svg className="w-5 h-5 text-blue-600 group-hover:scale-110 transition-transform duration-200" fill="currentColor" viewBox="0 0 24 24">
@@ -214,7 +214,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                 </svg>
               </button>
               <button 
-                onClick={() => signIn("google")}
+                // onClick={() => signIn("google")}
                 className="flex items-center justify-center py-3 px-4 border-2 border-gray-200 rounded-2xl bg-white/50 backdrop-blur-sm hover:bg-white hover:border-gray-300 transition-all duration-300 transform hover:scale-105 group"
               >
                 <svg className="w-5 h-5 text-red-500 group-hover:scale-110 transition-transform duration-200" fill="currentColor" viewBox="0 0 24 24">
