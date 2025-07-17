@@ -20,7 +20,7 @@ const handleSubmit = async (e: React.FormEvent) => {
     setError('');
 
     try {
-      const response = await fetch('/api/login', {
+      const response = await fetch('https://mahmoudmohammed.site/api/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -34,38 +34,35 @@ const handleSubmit = async (e: React.FormEvent) => {
         throw new Error(data.error || 'Login failed');
       }
 
-      // Show success toast with token
-      toast.success(`Login successful! Token: ${data.token}`, {
+      // Show success toast
+      toast.success('تم تسجيل الدخول بنجاح!', {
         position: "top-right",
-        autoClose: 5000,
+        autoClose: 3000,
         hideProgressBar: false,
         closeOnClick: true,
         pauseOnHover: true,
         draggable: true,
         progress: undefined,
+        rtl: true,  // Right-to-left for Arabic
+        theme: "colored",
       });
 
-      // Redirect after showing the toast
-      setTimeout(() => {
-        router.push('https://alia-m-arket-v2-orpin.vercel.app/');
-      }, 2000); // Wait 2 seconds before redirecting
+      // Wait for the toast to show before redirecting
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      
+      // Redirect
+      router.push('https://alia-m-arket-v2-orpin.vercel.app/');
       
     } catch (err: any) {
       setError(err.message);
-      toast.error(err.message || 'Login failed', {
+      toast.error(err.message || 'فشل تسجيل الدخول', {
         position: "top-right",
-        autoClose: 5000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
+        rtl: true,
       });
     } finally {
       setLoading(false);
     }
   };
-
   return (
     <div dir="rtl" className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-orange-50 flex items-center justify-center px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full">
