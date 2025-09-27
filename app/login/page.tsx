@@ -20,7 +20,7 @@ const handleSubmit = async (e: React.FormEvent) => {
     setError('');
 
     try {
-      const response = await fetch('http://aliaecommerce.com/api/login', {
+      const response = await fetch('https://mahmoudmohammed.site/api/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
