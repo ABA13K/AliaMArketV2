@@ -69,7 +69,7 @@ const [errorRandom, setErrorRandom] = useState<string | null>(null);
         setLoadingRandom(true);
         setErrorRandom(null);
         
-        const res = await fetch('http://aliaecommerce.com/api/public/home-page/products/random');
+        const res = await fetch('https://mahmoudmohammed.site/api/public/home-page/products/random');
         
         if (!res.ok) {
           throw new Error(`Failed to fetch random products: ${res.statusText}`);
@@ -98,7 +98,7 @@ const [errorRandom, setErrorRandom] = useState<string | null>(null);
         setLoadingBestselling(true);
         setErrorBestselling(null);
         
-        const res = await fetch('http://aliaecommerce.com/api/public/home-page/products/top-rated');
+        const res = await fetch('https://mahmoudmohammed.site/api/public/home-page/products/top-selling');
         
         if (!res.ok) {
           throw new Error(`Failed to fetch bestselling products: ${res.statusText}`);
@@ -127,7 +127,7 @@ const [errorRandom, setErrorRandom] = useState<string | null>(null);
         setLoadingCategories(true);
         setErrorCategories(null);
         
-        const res = await fetch('http://aliaecommerce.com/api/public/home-page/main-categorical');
+        const res = await fetch('https://mahmoudmohammed.site/api/public/home-page/main-categorical');
         
         if (!res.ok) {
           throw new Error(`Failed to fetch categories: ${res.statusText}`);
