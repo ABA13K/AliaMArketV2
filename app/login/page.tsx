@@ -13,7 +13,9 @@ export default function LoginPage() {
   const [loading, setLoading] = useState<boolean>(false);
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [focusedField, setFocusedField] = useState<"email" | "password" | "">("");
-
+  const handleSignupRedirect = () => {
+  router.push('/signup');
+};
 const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -235,9 +237,12 @@ const handleSubmit = async (e: React.FormEvent) => {
             <div className="text-center">
               <p className="text-gray-600">
                 ليس لديك حساب؟{' '}
-                <button className="font-semibold text-orange-600 hover:text-orange-700 transition-colors duration-200 hover:underline">
-                  إنشاء حساب جديد
-                </button>
+                <button 
+  onClick={handleSignupRedirect}
+  className="font-semibold text-orange-600 hover:text-orange-700 transition-colors duration-200 hover:underline"
+>
+  إنشاء حساب جديد
+</button>
               </p>
             </div>
           </div>

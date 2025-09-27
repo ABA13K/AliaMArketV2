@@ -1,378 +1,457 @@
 "use client";
 
 import { useState } from "react";
-import Head from "next/head";
-import Image from "next/image";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { toast } from 'react-toastify';
 
-type FormData = {
-  name: string;
-  email: string;
-  phone: string;
-  password: string;
-  confirmPassword: string;
-};
+export default function SignupPage() {
+  const router = useRouter();
 
-type FormErrors = {
-  name?: string;
-  email?: string;
-  phone?: string;
-  password?: string;
-  confirmPassword?: string;
-};
-
-export default function Signup() {
-  const [formData, setFormData] = useState<FormData>({
+  const [formData, setFormData] = useState({
     name: "",
     email: "",
-    phone: "",
     password: "",
-    confirmPassword: "",
+    password_confirmation: "",
+    gender: "",
+    birth_date: ""
   });
+  const [error, setError] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(false);
+  const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false);
+  const [focusedField, setFocusedField] = useState<"name" | "email" | "password" | "password_confirmation" | "gender" | "birth_date" | "">("");
 
-  const [errors, setErrors] = useState<FormErrors>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
+    setFormData(prev => ({
       ...prev,
-      [name]: value,
+      [name]: value
     }));
   };
 
   const validateForm = () => {
-    const newErrors: FormErrors = {};
-    if (!formData.name.trim()) newErrors.name = "الاسم مطلوب";
-    if (!formData.email.trim()) {
-      newErrors.email = "البريد الإلكتروني مطلوب";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = "البريد الإلكتروني غير صالح";
+    if (formData.password !== formData.password_confirmation) {
+      setError("كلمات المرور غير متطابقة");
+      return false;
     }
-    if (!formData.phone.trim()) {
-      newErrors.phone = "رقم الهاتف مطلوب";
-    } else if (!/^[0-9]+$/.test(formData.phone)) {
-      newErrors.phone = "رقم الهاتف يجب أن يحتوي على أرقام فقط";
+    if (formData.password.length < 6) {
+      setError("كلمة المرور يجب أن تكون至少 6 أحرف");
+      return false;
     }
-    if (!formData.password) {
-      newErrors.password = "كلمة المرور مطلوبة";
-    } else if (formData.password.length < 6) {
-      newErrors.password = "كلمة المرور يجب أن تكون 6 أحرف على الأقل";
+    if (!formData.email.includes('@')) {
+      setError("البريد الإلكتروني غير صحيح");
+      return false;
     }
-    if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = "كلمة المرور غير متطابقة";
+    if (!formData.name.trim()) {
+      setError("الاسم مطلوب");
+      return false;
+    }
+    if (!formData.gender) {
+      setError("يرجى اختيار الجنس");
+      return false;
+    }
+    if (!formData.birth_date) {
+      setError("تاريخ الميلاد مطلوب");
+      return false;
+    }
+    
+    // Validate birth date (should be at least 13 years old)
+    const birthDate = new Date(formData.birth_date);
+    const today = new Date();
+    const age = today.getFullYear() - birthDate.getFullYear();
+    if (age < 13) {
+      setError("يجب أن يكون عمرك 13 سنة على الأقل");
+      return false;
     }
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return true;
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (validateForm()) {
-      setIsSubmitting(true);
-      setTimeout(() => {
-        setIsSubmitting(false);
-        alert("تم إنشاء الحساب بنجاح!");
-      }, 1500);
+    setLoading(true);
+    setError('');
+
+    if (!validateForm()) {
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const response = await fetch('https://mahmoudmohammed.site/api/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Registration failed');
+      }
+
+      // Show success toast
+      toast.success('تم إنشاء الحساب بنجاح!', {
+        onClose: () => {
+          router.push('/login');
+        }
+      });
+    } catch (err: any) {
+      setError(err.message);
+      toast.error(err.message || 'فشل إنشاء الحساب', {
+        position: "top-right",
+        rtl: true,
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <>
-      <Head>
-        <title>إنشاء حساب جديد - منصة تسوق</title>
-        <meta
-          name="description"
-          content="انضم إلى منصتنا وابدأ رحلة التسوق أو البيع"
-        />
-      </Head>
+    <div dir="rtl" className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-orange-50 flex items-center justify-center px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full">
+        {/* Main Card with Modern Glass Effect */}
+        <div className="bg-white/80 backdrop-blur-xl p-8 rounded-3xl shadow-2xl border border-white/20 relative overflow-hidden">
+          {/* Error Message */}
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-lg text-sm">
+              {error}
+            </div>
+          )}
 
-      <main className="min-h-screen bg-gray-50">
-        <section className="bg-gradient-to-br from-blue-800 to-purple-700 text-white py-16 px-6 text-center">
-          <div className="max-w-4xl mx-auto">
-            <h1 className="text-3xl md:text-4xl font-bold mb-4">
-              أنشئ حسابك الآن
-            </h1>
-            <p className="text-lg md:text-xl text-blue-100 max-w-2xl mx-auto">
-              انضم إلى آلاف البائعين والمشترين في منصتنا المتكاملة
-            </p>
-          </div>
-        </section>
+          <div className="relative z-10">
+            {/* Header Section */}
+            <div className="text-center mb-8">
+              <div className="w-16 h-16 bg-gradient-to-r from-green-600 to-green-700 rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-lg transform hover:scale-110 transition-transform duration-300">
+                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                </svg>
+              </div>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-2">
+                إنشاء حساب جديد
+              </h1>
+              <p className="text-gray-600">
+                انضم إلى Alia Market واستمتع بتجربة تسوق فريدة
+              </p>
+            </div>
 
-        <section className="py-16 px-6">
-          <div className="max-w-2xl mx-auto bg-white rounded-2xl shadow-lg overflow-hidden">
-            <div className="md:flex">
-              <div className="p-8 md:p-10 w-full">
-                <h2 className="text-2xl font-bold text-gray-800 mb-6">
-                  معلومات التسجيل
-                </h2>
-
-                <form onSubmit={handleSubmit} className="space-y-5">
-                  <div>
-                    <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1 text-right">
-                      الاسم الكامل
-                    </label>
-                    <input
-                      type="text"
-                      id="name"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleChange}
-                      className={`w-full px-4 py-3 rounded-lg border ${errors.name ? "border-red-500" : "border-gray-300"} focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                      placeholder="أدخل اسمك الكامل"
-                    />
-                    {errors.name && (
-                      <p className="mt-1 text-sm text-red-600 text-right">
-                        {errors.name}
-                      </p>
-                    )}
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Name Field */}
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-gray-700">
+                  الاسم الكامل
+                </label>
+                <div className="relative group">
+                  <input
+                    type="text"
+                    name="name"
+                    required
+                    value={formData.name}
+                    onChange={handleChange}
+                    onFocus={() => setFocusedField("name")}
+                    onBlur={() => setFocusedField("")}
+                    className={`w-full px-4 py-4 pl-12 border-2 rounded-2xl transition-all duration-300 bg-white/50 backdrop-blur-sm text-gray-700 placeholder-gray-400 ${
+                      focusedField === "name" 
+                        ? "border-orange-400 shadow-lg shadow-orange-100 bg-white/80" 
+                        : "border-gray-200 hover:border-gray-300"
+                    }`}
+                    placeholder="أدخل اسمك الكامل"
+                  />
+                  <div className={`absolute right-4 top-1/2 transform -translate-y-1/2 transition-colors duration-300 ${
+                    focusedField === "name" ? "text-orange-500" : "text-gray-400"
+                  }`}>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
                   </div>
+                </div>
+              </div>
 
-                  <div>
-                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1 text-right">
-                      البريد الإلكتروني
-                    </label>
-                    <input
-                      type="email"
-                      id="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleChange}
-                      className={`w-full px-4 py-3 rounded-lg border ${errors.email ? "border-red-500" : "border-gray-300"} focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                      placeholder="example@email.com"
-                    />
-                    {errors.email && (
-                      <p className="mt-1 text-sm text-red-600 text-right">
-                        {errors.email}
-                      </p>
-                    )}
+              {/* Email Field */}
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-gray-700">
+                  البريد الإلكتروني
+                </label>
+                <div className="relative group">
+                  <input
+                    type="email"
+                    name="email"
+                    required
+                    value={formData.email}
+                    onChange={handleChange}
+                    onFocus={() => setFocusedField("email")}
+                    onBlur={() => setFocusedField("")}
+                    className={`w-full px-4 py-4 pl-12 border-2 rounded-2xl transition-all duration-300 bg-white/50 backdrop-blur-sm text-gray-700 placeholder-gray-400 ${
+                      focusedField === "email" 
+                        ? "border-orange-400 shadow-lg shadow-orange-100 bg-white/80" 
+                        : "border-gray-200 hover:border-gray-300"
+                    }`}
+                    placeholder="example@email.com"
+                    dir="ltr"
+                  />
+                  <div className={`absolute right-4 top-1/2 transform -translate-y-1/2 transition-colors duration-300 ${
+                    focusedField === "email" ? "text-orange-500" : "text-gray-400"
+                  }`}>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
                   </div>
+                </div>
+              </div>
 
-                  <div>
-                    <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1 text-right">
-                      رقم الهاتف
-                    </label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                        <span className="text-gray-500">+963</span>
-                      </div>
-                      <input
-                        type="tel"
-                        id="phone"
-                        name="phone"
-                        value={formData.phone}
-                        onChange={handleChange}
-                        className={`w-full px-4 py-3 rounded-lg border ${errors.phone ? "border-red-500" : "border-gray-300"} focus:outline-none focus:ring-2 focus:ring-blue-500 pl-16`}
-                        placeholder="123 456 789"
-                      />
-                    </div>
-                    {errors.phone && (
-                      <p className="mt-1 text-sm text-red-600 text-right">
-                        {errors.phone}
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1 text-right">
-                      كلمة المرور
-                    </label>
-                    <input
-                      type="password"
-                      id="password"
-                      name="password"
-                      value={formData.password}
-                      onChange={handleChange}
-                      className={`w-full px-4 py-3 rounded-lg border ${errors.password ? "border-red-500" : "border-gray-300"} focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                      placeholder="••••••••"
-                    />
-                    {errors.password && (
-                      <p className="mt-1 text-sm text-red-600 text-right">
-                        {errors.password}
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1 text-right">
-                      تأكيد كلمة المرور
-                    </label>
-                    <input
-                      type="password"
-                      id="confirmPassword"
-                      name="confirmPassword"
-                      value={formData.confirmPassword}
-                      onChange={handleChange}
-                      className={`w-full px-4 py-3 rounded-lg border ${errors.confirmPassword ? "border-red-500" : "border-gray-300"} focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                      placeholder="••••••••"
-                    />
-                    {errors.confirmPassword && (
-                      <p className="mt-1 text-sm text-red-600 text-right">
-                        {errors.confirmPassword}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="flex items-start">
-                    <div className="flex items-center h-5">
-                      <input
-                        id="terms"
-                        name="terms"
-                        type="checkbox"
-                        className="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-blue-300"
-                        required
-                      />
-                    </div>
-                    <label htmlFor="terms" className="mr-2 text-sm text-gray-700">
-                      أوافق على{" "}
-                      <a href="#" className="text-blue-600 hover:underline">
-                        الشروط والأحكام
-                      </a>{" "}
-                      و{" "}
-                      <a href="#" className="text-blue-600 hover:underline">
-                        سياسة الخصوصية
-                      </a>
-                    </label>
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className={`w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold py-3 px-4 rounded-lg hover:from-blue-700 hover:to-purple-700 transition shadow-md hover:shadow-lg ${
-                      isSubmitting ? "opacity-70 cursor-not-allowed" : ""
+              {/* Gender Field */}
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-gray-700">
+                  الجنس
+                </label>
+                <div className="relative group">
+                  <select
+                    name="gender"
+                    required
+                    value={formData.gender}
+                    onChange={handleChange}
+                    onFocus={() => setFocusedField("gender")}
+                    onBlur={() => setFocusedField("")}
+                    className={`w-full px-4 py-4 pl-12 border-2 rounded-2xl transition-all duration-300 bg-white/50 backdrop-blur-sm text-gray-700 appearance-none ${
+                      focusedField === "gender" 
+                        ? "border-orange-400 shadow-lg shadow-orange-100 bg-white/80" 
+                        : "border-gray-200 hover:border-gray-300"
                     }`}
                   >
-                    {isSubmitting ? (
-                      <span className="flex items-center justify-center">
-                        <svg
-                          className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                        >
-                          <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                          ></circle>
-                          <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                          ></path>
-                        </svg>
-                        جاري الإنشاء...
-                      </span>
-                    ) : (
-                      "إنشاء حساب"
-                    )}
-                  </button>
-                </form>
-
-                <div className="mt-6 text-center">
-                  <p className="text-sm text-gray-600">
-                    لديك حساب بالفعل؟{" "}
-                    <Link
-                      href="/login"
-                      className="text-blue-600 font-medium hover:underline"
-                    >
-                      تسجيل الدخول
-                    </Link>
-                  </p>
+                    <option value="">اختر الجنس</option>
+                    <option value="male">ذكر</option>
+                    <option value="female">أنثى</option>
+                  </select>
+                  <div className={`absolute right-4 top-1/2 transform -translate-y-1/2 transition-colors duration-300 ${
+                    focusedField === "gender" ? "text-orange-500" : "text-gray-400"
+                  }`}>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                  </div>
+                  <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
                 </div>
               </div>
 
-              <div className="hidden md:block md:w-1/2 bg-gradient-to-b from-blue-500 to-purple-600 p-8 flex items-center justify-center">
-                <div className="text-center">
-                  <Image
-                    src="/signup-illustration.svg"
-                    alt="Signup Illustration"
-                    width={300}
-                    height={300}
-                    className="mx-auto mb-6"
+              {/* Birth Date Field */}
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-gray-700">
+                  تاريخ الميلاد
+                </label>
+                <div className="relative group">
+                  <input
+                    type="date"
+                    name="birth_date"
+                    required
+                    value={formData.birth_date}
+                    onChange={handleChange}
+                    onFocus={() => setFocusedField("birth_date")}
+                    onBlur={() => setFocusedField("")}
+                    className={`w-full px-4 py-4 pl-12 border-2 rounded-2xl transition-all duration-300 bg-white/50 backdrop-blur-sm text-gray-700 ${
+                      focusedField === "birth_date" 
+                        ? "border-orange-400 shadow-lg shadow-orange-100 bg-white/80" 
+                        : "border-gray-200 hover:border-gray-300"
+                    }`}
+                    max={new Date().toISOString().split('T')[0]}
                   />
-                  <h3 className="text-xl font-bold text-white mb-2">
-                    انضم إلى مجتمعنا
-                  </h3>
-                  <p className="text-blue-100">
-                    سواء كنت بائعاً أو مشترياً، نحن نوفر لك الأدوات اللازمة لأفضل تجربة
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="py-16 px-6 bg-gray-100">
-          <div className="max-w-6xl mx-auto">
-            <h2 className="text-2xl font-bold text-center text-gray-800 mb-12">
-              لماذا تنضم إلينا؟
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {[
-                {
-                  icon: (
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                    </svg>
-                  ),
-                  title: "مدفوعات آمنة",
-                  description: "أنظمة دفع متعددة مع أعلى معايير الأمان",
-                },
-                {
-                  icon: (
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                    </svg>
-                  ),
-                  title: "حماية المشتري",
-                  description: "ضمان استرداد الأموال إذا لم يكن المنتج كما هو موصوف",
-                },
-                {
-                  icon: (
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <div className={`absolute right-4 top-1/2 transform -translate-y-1/2 transition-colors duration-300 ${
+                    focusedField === "birth_date" ? "text-orange-500" : "text-gray-400"
+                  }`}>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
-                  ),
-                  title: "توصيل سريع",
-                  description: "شبكة توصيل تغطي جميع أنحاء البلاد",
-                },
-              ].map((feature, index) => (
-                <div key={index} className="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition">
-                  <div className="mb-4">{feature.icon}</div>
-                  <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                    {feature.title}
-                  </h3>
-                  <p className="text-gray-600">{feature.description}</p>
+                  </div>
                 </div>
-              ))}
-            </div>
-          </div>
-        </section>
+              </div>
 
-        <footer className="bg-gray-800 text-white py-12 px-6">
-          <div className="max-w-6xl mx-auto text-center">
-            <p className="mb-4">
-              © {new Date().getFullYear()} منصة تسوق - جميع الحقوق محفوظة
-            </p>
-            <div className="flex justify-center space-x-6">
-              <a href="#" className="text-gray-400 hover:text-white">
-                الشروط والأحكام
-              </a>
-              <a href="#" className="text-gray-400 hover:text-white">
-                سياسة الخصوصية
-              </a>
-              <a href="#" className="text-gray-400 hover:text-white">
-                اتصل بنا
-              </a>
+              {/* Password Field */}
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-gray-700">
+                  كلمة المرور
+                </label>
+                <div className="relative group">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    name="password"
+                    required
+                    value={formData.password}
+                    onChange={handleChange}
+                    onFocus={() => setFocusedField("password")}
+                    onBlur={() => setFocusedField("")}
+                    className={`w-full px-4 py-4 pl-12 pr-12 border-2 rounded-2xl transition-all duration-300 bg-white/50 backdrop-blur-sm text-gray-700 placeholder-gray-400 ${
+                      focusedField === "password" 
+                        ? "border-orange-400 shadow-lg shadow-orange-100 bg-white/80" 
+                        : "border-gray-200 hover:border-gray-300"
+                    }`}
+                    placeholder="至少 6 أحرف"
+                    dir="ltr"
+                  />
+                  <div className={`absolute right-4 top-1/2 transform -translate-y-1/2 transition-colors duration-300 ${
+                    focusedField === "password" ? "text-orange-500" : "text-gray-400"
+                  }`}>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors duration-200"
+                  >
+                    {showPassword ? (
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                    ) : (
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Confirm Password Field */}
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-gray-700">
+                  تأكيد كلمة المرور
+                </label>
+                <div className="relative group">
+                  <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    name="password_confirmation"
+                    required
+                    value={formData.password_confirmation}
+                    onChange={handleChange}
+                    onFocus={() => setFocusedField("password_confirmation")}
+                    onBlur={() => setFocusedField("")}
+                    className={`w-full px-4 py-4 pl-12 pr-12 border-2 rounded-2xl transition-all duration-300 bg-white/50 backdrop-blur-sm text-gray-700 placeholder-gray-400 ${
+                      focusedField === "password_confirmation" 
+                        ? "border-orange-400 shadow-lg shadow-orange-100 bg-white/80" 
+                        : "border-gray-200 hover:border-gray-300"
+                    }`}
+                    placeholder="أعد إدخال كلمة المرور"
+                    dir="ltr"
+                  />
+                  <div className={`absolute right-4 top-1/2 transform -translate-y-1/2 transition-colors duration-300 ${
+                    focusedField === "password_confirmation" ? "text-orange-500" : "text-gray-400"
+                  }`}>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    </svg>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors duration-200"
+                  >
+                    {showConfirmPassword ? (
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                    ) : (
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Terms and Conditions */}
+              <div className="flex items-start space-x-2">
+                <input
+                  type="checkbox"
+                  required
+                  className="w-4 h-4 text-orange-600 bg-white border-2 border-gray-300 rounded focus:ring-orange-500 focus:ring-2 transition-all duration-200 mt-1"
+                />
+                <label className="text-sm text-gray-700">
+                  أوافق على{' '}
+                  <button type="button" className="text-orange-600 hover:text-orange-700 underline">
+                    الشروط والأحكام
+                  </button>{' '}
+                  و{' '}
+                  <button type="button" className="text-orange-600 hover:text-orange-700 underline">
+                    سياسة الخصوصية
+                  </button>
+                </label>
+              </div>
+
+              {/* Submit Button */}
+              <button
+                type="submit"
+                disabled={loading}
+                className={`w-full relative overflow-hidden bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold py-4 px-6 rounded-2xl transition-all duration-300 transform hover:scale-[1.02] hover:shadow-xl shadow-green-500/25 ${
+                  loading ? "opacity-80 cursor-not-allowed" : ""
+                }`}
+              >
+                {loading ? (
+                  <div className="flex items-center justify-center">
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin ml-3"></div>
+                    جاري إنشاء الحساب...
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center">
+                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                    </svg>
+                    إنشاء حساب
+                  </div>
+                )}
+              </button>
+            </form>
+
+            {/* Divider */}
+            <div className="relative mt-8 mb-6">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-200"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-4 bg-white/80 text-gray-500 font-medium">أو سجل باستخدام</span>
+              </div>
+            </div>
+
+            {/* Social Signup Buttons */}
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              <button 
+                className="flex items-center justify-center py-3 px-4 border-2 border-gray-200 rounded-2xl bg-white/50 backdrop-blur-sm hover:bg-white hover:border-gray-300 transition-all duration-300 transform hover:scale-105 group"
+              >
+                <svg className="w-5 h-5 text-blue-600 group-hover:scale-110 transition-transform duration-200" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M22.675 0h-21.35c-.732 0-1.325.593-1.325 1.325v21.351c0 .731.593 1.324 1.325 1.324h11.495v-9.294h-3.128v-3.622h3.128v-2.671c0-3.1 1.893-4.788 4.659-4.788 1.325 0 2.463.099 2.795.143v3.24l-1.918.001c-1.504 0-1.795.715-1.795 1.763v2.313h3.587l-.467 3.622h-3.12v9.293h6.116c.73 0 1.323-.593 1.323-1.325v-21.35c0-.732-.593-1.325-1.325-1.325z" />
+                </svg>
+              </button>
+              <button 
+                className="flex items-center justify-center py-3 px-4 border-2 border-gray-200 rounded-2xl bg-white/50 backdrop-blur-sm hover:bg-white hover:border-gray-300 transition-all duration-300 transform hover:scale-105 group"
+              >
+                <svg className="w-5 h-5 text-red-500 group-hover:scale-110 transition-transform duration-200" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12.545 10.239v3.821h5.445c-.712 2.315-2.647 3.972-5.445 3.972-3.332 0-6.033-2.701-6.033-6.032s2.701-6.032 6.033-6.032c1.498 0 2.866.549 3.921 1.453l2.814-2.814c-1.784-1.667-4.143-2.685-6.735-2.685-5.521 0-10 4.479-10 10s4.479 10 10 10c8.396 0 10-7.524 10-10 0-.61-.052-1.231-.149-1.849h-9.851z" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Login Link */}
+            <div className="text-center">
+              <p className="text-gray-600">
+                لديك حساب بالفعل؟{' '}
+                <button 
+                  onClick={() => router.push('/login')}
+                  className="font-semibold text-orange-600 hover:text-orange-700 transition-colors duration-200 hover:underline"
+                >
+                  تسجيل الدخول
+                </button>
+              </p>
             </div>
           </div>
-        </footer>
-      </main>
-    </>
+        </div>
+      </div>
+    </div>
   );
 }
