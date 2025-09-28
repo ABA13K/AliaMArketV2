@@ -98,7 +98,7 @@ const [errorRandom, setErrorRandom] = useState<string | null>(null);
         setLoadingBestselling(true);
         setErrorBestselling(null);
         
-        const res = await fetch('https://mahmoudmohammed.site/api/public/home-page/products/top-selling');
+        const res = await fetch('https://mahmoudmohammed.site/api/public/home-page/products/top-rated');
         
         if (!res.ok) {
           throw new Error(`Failed to fetch bestselling products: ${res.statusText}`);
