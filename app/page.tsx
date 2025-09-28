@@ -1053,7 +1053,7 @@ const [errorRandom, setErrorRandom] = useState<string | null>(null);
       <p className="text-gray-500 max-w-2xl mx-auto">المنتجات المضافة مؤخراً</p>
     </div>
 
-    {loadinglastet ? (
+    {latestProducts ? (
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
         {[...Array(4)].map((_, index) => (
           <div key={index} className="bg-white rounded-xl shadow-md overflow-hidden animate-pulse">
