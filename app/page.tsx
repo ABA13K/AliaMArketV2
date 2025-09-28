@@ -1053,7 +1053,7 @@ const [errorRandom, setErrorRandom] = useState<string | null>(null);
       <p className="text-gray-500 max-w-2xl mx-auto">المنتجات المضافة مؤخراً</p>
     </div>
 
-    {latestProducts ? (
+    {loadinglastet ? (
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
         {[...Array(4)].map((_, index) => (
           <div key={index} className="bg-white rounded-xl shadow-md overflow-hidden animate-pulse">
@@ -1078,7 +1078,7 @@ const [errorRandom, setErrorRandom] = useState<string | null>(null);
       </div>
     ) : (
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-        {bestsellingProducts.map((product) => (
+        {latestProducts.map((product) => (
           <div key={product.id} className="group bg-white rounded-xl shadow-md hover:shadow-xl transition overflow-hidden border border-gray-100">
             <Link href={`/product/${product.id}`} className="block">
               <div className="relative h-60 overflow-hidden">
