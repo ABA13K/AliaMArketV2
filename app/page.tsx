@@ -21,6 +21,8 @@ export default function Home() {
   const [errorCategories, setErrorCategories] = useState<string | null>(null);
   const { addToCart } = useCart();
   const [bestsellingProducts, setBestsellingProducts] = useState<BestsellingProduct[]>([]);
+    const [latestProducts, setlatestProducts] = useState<LatestProduct[]>([]);
+
 const [loadingBestselling, setLoadingBestselling] = useState(true);
 const [loadinglastet, setLoadinglastet] = useState(true);
 
@@ -55,6 +57,15 @@ const [errorRandom, setErrorRandom] = useState<string | null>(null);
     products_count: number;
   }
   interface BestsellingProduct {
+    id: number;
+    name: string;
+    original_price: string;
+    discount_percentage: number;
+    price_after_discount: string;
+    total_rating: number;
+    image: string;
+  }
+   interface LatestProduct {
     id: number;
     name: string;
     original_price: string;
@@ -111,15 +122,15 @@ const [errorRandom, setErrorRandom] = useState<string | null>(null);
         const response = await res.json();
         
         if (response.data && Array.isArray(response.data)) {
-          setBestsellingProducts(response.data);
+          setlatestProducts(response.data);
         } else {
           throw new Error('Invalid data format from API');
         }
       } catch (err: any) {
-        setErrorBestselling(err.message);
+        setErrorlastest(err.message);
         console.error('Error fetching bestselling products:', err);
       } finally {
-        setLoadingBestselling(false);
+        setLoadinglastet(false);
       }
     }
     
