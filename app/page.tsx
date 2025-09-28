@@ -1020,10 +1020,10 @@ const [errorRandom, setErrorRandom] = useState<string | null>(null);
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {categories.map((category) => (
           <Link
-            key={category.id}
-            href={`/categories/${category.id}`}
-            className="group bg-white rounded-2xl shadow-md hover:shadow-xl transition overflow-hidden relative cursor-pointer"
-          >
+  key={category.id}
+  href={`/sub-categories/${category.id}`}
+  className="group bg-white rounded-2xl shadow-md hover:shadow-xl transition overflow-hidden relative cursor-pointer"
+>
             <div className="relative h-48 overflow-hidden">
               <Image
                 src={category.image || '/placeholder-category.jpg'}
