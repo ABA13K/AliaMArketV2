@@ -194,57 +194,6 @@ const [errorRandom, setErrorRandom] = useState<string | null>(null);
     
     fetchCategories();
   }, []);
-  // Add this useEffect hook after your existing useEffects in the main page
-useEffect(() => {
-  if (categories.length === 0 || typeof window === 'undefined') return;
-
-  const slider = document.getElementById('categories-slider');
-  if (!slider) return;
-
-  let autoScrollInterval: NodeJS.Timeout;
-  let isPaused = false;
-
-  const startAutoScroll = () => {
-    autoScrollInterval = setInterval(() => {
-      if (isPaused) return;
-      
-      const maxScroll = slider.scrollWidth - slider.clientWidth;
-      const currentScroll = slider.scrollLeft;
-      
-      if (currentScroll >= maxScroll - 10) {
-        // If at the end, scroll back to start
-        slider.scrollTo({ left: 0, behavior: 'smooth' });
-      } else {
-        // Scroll to next position
-        slider.scrollBy({ left: 300, behavior: 'smooth' });
-      }
-    }, 3000); // Change slide every 3 seconds
-  };
-
-  // Pause auto-scroll on hover
-  const pauseAutoScroll = () => {
-    isPaused = true;
-  };
-
-  const resumeAutoScroll = () => {
-    isPaused = false;
-  };
-
-  slider.addEventListener('mouseenter', pauseAutoScroll);
-  slider.addEventListener('touchstart', pauseAutoScroll);
-  slider.addEventListener('mouseleave', resumeAutoScroll);
-  slider.addEventListener('touchend', resumeAutoScroll);
-
-  startAutoScroll();
-
-  return () => {
-    clearInterval(autoScrollInterval);
-    slider.removeEventListener('mouseenter', pauseAutoScroll);
-    slider.removeEventListener('touchstart', pauseAutoScroll);
-    slider.removeEventListener('mouseleave', resumeAutoScroll);
-    slider.removeEventListener('touchend', resumeAutoScroll);
-  };
-}, [categories.length]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -1050,7 +999,7 @@ useEffect(() => {
 
     {loadingCategories ? (
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {[...Array(4)].map((_, index) => (
+        {[...Array(8)].map((_, index) => (
           <div key={index} className="bg-white rounded-2xl shadow-md overflow-hidden animate-pulse">
             <div className="h-48 bg-gray-200"></div>
             <div className="p-5">
@@ -1071,50 +1020,14 @@ useEffect(() => {
         </button>
       </div>
     ) : (
-      <div className="relative">
-        {/* Navigation Arrows */}
-        <button
-          onClick={() => {
-            const container = document.getElementById('categories-slider');
-            if (container) {
-              container.scrollLeft -= 300;
-            }
-          }}
-          className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white border border-gray-200 rounded-full w-12 h-12 flex items-center justify-center shadow-lg hover:bg-gray-50 transition z-10 hidden md:flex hover:scale-110"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
-        </button>
-
-        <button
-          onClick={() => {
-            const container = document.getElementById('categories-slider');
-            if (container) {
-              container.scrollLeft += 300;
-            }
-          }}
-          className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white border border-gray-200 rounded-full w-12 h-12 flex items-center justify-center shadow-lg hover:bg-gray-50 transition z-10 hidden md:flex hover:scale-110"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-        </button>
-
-        {/* Categories Slider */}
-        <div
-          id="categories-slider"
-          className="flex gap-6 overflow-x-auto scrollbar-hide scroll-smooth pb-4 px-2"
-          style={{
-            scrollbarWidth: 'none',
-            msOverflowStyle: 'none'
-          }}
-        >
-          {categories.map((category, index) => (
+      <>
+        {/* Categories Grid */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mb-12">
+          {categories.slice(0, 8).map((category, index) => (
             <Link
               key={category.id}
               href={`/sub-categories/${category.id}`}
-              className="group flex-shrink-0 w-64 bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden cursor-pointer transform hover:-translate-y-2"
+              className="group bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden cursor-pointer transform hover:-translate-y-2"
               style={{
                 animation: `slideIn 0.5s ease-out ${index * 0.1}s both`
               }}
@@ -1123,8 +1036,8 @@ useEffect(() => {
                 <Image
                   src={category.image || '/placeholder-category.jpg'}
                   alt={category.name}
-                  width={256}
-                  height={192}
+                  width={300}
+                  height={200}
                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                   onError={(e) => {
                     e.currentTarget.src = '/placeholder-category.jpg';
@@ -1148,56 +1061,35 @@ useEffect(() => {
               </div>
             </Link>
           ))}
-          
-          {/* View All Categories Card */}
-          <Link
-            href="/categories"
-            className="group flex-shrink-0 w-64 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden cursor-pointer transform hover:-translate-y-2 flex flex-col items-center justify-center text-white p-8"
-          >
-            <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-              </svg>
-            </div>
-            <h3 className="font-bold text-xl mb-2 text-center">جميع الفئات</h3>
-            <p className="text-blue-100 text-sm text-center">اكتشف جميع الفئات المتاحة</p>
-            <div className="mt-4 flex items-center gap-1 text-blue-100 group-hover:text-white transition-colors">
-              <span className="text-sm">عرض الكل</span>
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-              </svg>
-            </div>
-          </Link>
         </div>
 
-        {/* Scroll Indicators */}
-        <div className="flex justify-center gap-2 mt-6">
-          {categories.slice(0, 5).map((_, index) => (
-            <button
-              key={index}
-              onClick={() => {
-                const container = document.getElementById('categories-slider');
-                if (container) {
-                  container.scrollLeft = index * 280;
-                }
-              }}
-              className="w-3 h-3 rounded-full bg-gray-300 hover:bg-gray-400 transition"
-            />
-          ))}
-        </div>
-      </div>
+        {/* View All Categories Button */}
+        {categories.length > 8 && (
+          <div className="text-center">
+            <Link
+              href="/categories"
+              className="inline-flex items-center gap-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold px-8 py-4 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+              </svg>
+              عرض جميع الفئات
+              <span className="bg-white/20 px-2 py-1 rounded-lg text-sm">
+                ({categories.length})
+              </span>
+            </Link>
+            
+            {/* Additional Info */}
+            <p className="text-gray-500 mt-4 text-sm">
+              عرض {Math.min(8, categories.length)} من أصل {categories.length} فئة
+            </p>
+          </div>
+        )}
+      </>
     )}
   </div>
 
   <style jsx global>{`
-    .scrollbar-hide {
-      -ms-overflow-style: none;
-      scrollbar-width: none;
-    }
-    .scrollbar-hide::-webkit-scrollbar {
-      display: none;
-    }
-    
     @keyframes slideIn {
       from {
         opacity: 0;
