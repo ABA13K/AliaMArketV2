@@ -22,7 +22,11 @@ export default function Home() {
   const { addToCart } = useCart();
   const [bestsellingProducts, setBestsellingProducts] = useState<BestsellingProduct[]>([]);
 const [loadingBestselling, setLoadingBestselling] = useState(true);
+const [loadinglastet, setLoadinglastet] = useState(true);
+
 const [errorBestselling, setErrorBestselling] = useState<string | null>(null);
+const [errorlastest, setErrorlastest] = useState<string | null>(null);
+
 const [randomProducts, setRandomProducts] = useState<any[]>([]);
 const [loadingRandom, setLoadingRandom] = useState(true);
 const [errorRandom, setErrorRandom] = useState<string | null>(null);
@@ -93,6 +97,35 @@ const [errorRandom, setErrorRandom] = useState<string | null>(null);
     fetchRandomProducts();
   }, []);
   useEffect(() => {
+    async function fetchlatestgProducts() {
+      try {
+        setLoadinglastet(true);
+        setErrorlastest(null);
+        
+        const res = await fetch('https://mahmoudmohammed.site/api/public/home-page/products/latest');
+        
+        if (!res.ok) {
+          throw new Error(`Failed to fetch bestselling products: ${res.statusText}`);
+        }
+        
+        const response = await res.json();
+        
+        if (response.data && Array.isArray(response.data)) {
+          setBestsellingProducts(response.data);
+        } else {
+          throw new Error('Invalid data format from API');
+        }
+      } catch (err: any) {
+        setErrorBestselling(err.message);
+        console.error('Error fetching bestselling products:', err);
+      } finally {
+        setLoadingBestselling(false);
+      }
+    }
+    
+    fetchlatestgProducts();
+  }, []);
+   useEffect(() => {
     async function fetchBestsellingProducts() {
       try {
         setLoadingBestselling(true);
@@ -1009,7 +1042,7 @@ const [errorRandom, setErrorRandom] = useState<string | null>(null);
       <p className="text-gray-500 max-w-2xl mx-auto">المنتجات المضافة مؤخراً</p>
     </div>
 
-    {loadingBestselling ? (
+    {loadinglastet ? (
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
         {[...Array(4)].map((_, index) => (
           <div key={index} className="bg-white rounded-xl shadow-md overflow-hidden animate-pulse">
@@ -1022,7 +1055,7 @@ const [errorRandom, setErrorRandom] = useState<string | null>(null);
           </div>
         ))}
       </div>
-    ) : errorBestselling ? (
+    ) : errorlastest ? (
       <div className="text-center py-8">
         <p className="text-red-500 mb-4">{errorBestselling}</p>
         <button
