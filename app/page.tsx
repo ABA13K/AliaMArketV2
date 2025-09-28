@@ -987,7 +987,9 @@ const [errorRandom, setErrorRandom] = useState<string | null>(null);
         </section>
 
         {/* قسم الفئات */}
-        <section dir="rtl" id="categories" className="py-20 px-6 bg-white">
+        // Replace your current categories section in the main page with this slider version
+
+<section dir="rtl" id="categories" className="py-20 px-6 bg-white">
   <div className="max-w-7xl mx-auto">
     <div className="text-center mb-14">
       <h2 className="text-3xl font-bold mb-3 text-blue-900">تصفح حسب الفئة</h2>
@@ -1017,35 +1019,110 @@ const [errorRandom, setErrorRandom] = useState<string | null>(null);
         </button>
       </div>
     ) : (
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {categories.map((category) => (
-          <Link
-  key={category.id}
-  href={`/sub-categories/${category.id}`}
-  className="group bg-white rounded-2xl shadow-md hover:shadow-xl transition overflow-hidden relative cursor-pointer"
->
-            <div className="relative h-48 overflow-hidden">
-              <Image
-                src={category.image || '/placeholder-category.jpg'}
-                alt={category.name}
-                width={300}
-                height={200}
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                onError={(e) => {
-                  e.currentTarget.src = '/placeholder-category.jpg';
-                }}
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-            </div>
-            <div className="p-5 absolute bottom-0 left-0 right-0">
-              <h3 className="font-bold text-xl text-white mb-1">{category.name}</h3>
-              <p className="text-sm text-gray-200">{category.products_count} منتج</p>
-            </div>
-          </Link>
-        ))}
+      <div className="relative">
+        {/* Navigation Arrows */}
+        <button
+          onClick={() => {
+            const container = document.getElementById('categories-slider');
+            if (container) {
+              container.scrollLeft -= 300;
+            }
+          }}
+          className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white border border-gray-200 rounded-full w-10 h-10 flex items-center justify-center shadow-lg hover:bg-gray-50 transition z-10 hidden md:flex"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+
+        <button
+          onClick={() => {
+            const container = document.getElementById('categories-slider');
+            if (container) {
+              container.scrollLeft += 300;
+            }
+          }}
+          className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white border border-gray-200 rounded-full w-10 h-10 flex items-center justify-center shadow-lg hover:bg-gray-50 transition z-10 hidden md:flex"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+
+        {/* Categories Slider */}
+        <div
+          id="categories-slider"
+          className="flex gap-6 overflow-x-auto scrollbar-hide scroll-smooth pb-4 px-2"
+          style={{
+            scrollbarWidth: 'none',
+            msOverflowStyle: 'none'
+          }}
+        >
+          {categories.map((category) => (
+            <Link
+              key={category.id}
+              href={`/sub-categories/${category.id}`}
+              className="group flex-shrink-0 w-64 bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden cursor-pointer transform hover:-translate-y-2"
+            >
+              <div className="relative h-48 overflow-hidden">
+                <Image
+                  src={category.image || '/placeholder-category.jpg'}
+                  alt={category.name}
+                  width={256}
+                  height={192}
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  onError={(e) => {
+                    e.currentTarget.src = '/placeholder-category.jpg';
+                  }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                
+                {/* Hover Effect */}
+                <div className="absolute inset-0 bg-orange-500/90 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                  <div className="text-center text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                    <span className="font-medium text-sm">تصفح القسم</span>
+                  </div>
+                </div>
+              </div>
+              <div className="p-5">
+                <h3 className="font-bold text-lg text-gray-800 mb-1">{category.name}</h3>
+                <p className="text-gray-500 text-sm">{category.products_count} منتج</p>
+              </div>
+            </Link>
+          ))}
+        </div>
+
+        {/* Scroll Indicators for Mobile */}
+        <div className="flex justify-center gap-2 mt-4 md:hidden">
+          {categories.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => {
+                const container = document.getElementById('categories-slider');
+                if (container) {
+                  container.scrollLeft = index * 280;
+                }
+              }}
+              className="w-2 h-2 rounded-full bg-gray-300 hover:bg-gray-400 transition"
+            />
+          ))}
+        </div>
       </div>
     )}
   </div>
+
+  <style jsx global>{`
+    .scrollbar-hide {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    .scrollbar-hide::-webkit-scrollbar {
+      display: none;
+    }
+  `}</style>
 </section>
 
         {/* قسم المنتجات الأكثر مبيعاً */}
