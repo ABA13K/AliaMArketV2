@@ -437,7 +437,7 @@ const [errorRandom, setErrorRandom] = useState<string | null>(null);
     return (
       <>
         <Head>
-          <title dir="rtl">Alia Market - منصة تسوق إلكترونية</title>
+          <title dir="rtl">Ali Market - منصة تسوق إلكترونية</title>
           <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
           <meta name="description" content="اكتشف أحدث المنتجات من أفضل البائعين ضمن فئات متنوعة" />
         </Head>
