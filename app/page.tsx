@@ -987,7 +987,6 @@ const [errorRandom, setErrorRandom] = useState<string | null>(null);
         </section>
 
         {/* قسم الفئات */}
-        // Replace your current categories section in the main page with this slider version
 
 <section dir="rtl" id="categories" className="py-20 px-6 bg-white">
   <div className="max-w-7xl mx-auto">
