@@ -1139,7 +1139,21 @@ const [errorRandom, setErrorRandom] = useState<string | null>(null);
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
         {latestProducts.map((product) => (
           <div key={product.id} className="group bg-white rounded-xl shadow-md hover:shadow-xl transition overflow-hidden border border-gray-100">
-            <Link href={`/product/${product.id}`} className="block">
+            <Link 
+  href={{
+    pathname: '/product',
+    query: { 
+      id: product.id,
+      name: product.name,
+      price: product.price_after_discount,
+      oldPrice: product.original_price,
+      image: product.image,
+      discount: product.discount_percentage,
+      rating: product.total_rating
+    }
+  }}
+  className="block"
+>
               <div className="relative h-60 overflow-hidden">
                 <Image
                   src={product.image || '/placeholder-product.jpg'}
