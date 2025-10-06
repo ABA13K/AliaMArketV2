@@ -1,13 +1,14 @@
+// app/product/page.js
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, Suspense } from "react";
 import Head from "next/head";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useCart } from "../context/CartContext";
 
-// Custom SVG icons
+// Custom SVG icons (keep the same as before)
 const ArrowLeftIcon = () => (
   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -44,7 +45,8 @@ const ChevronRightIcon = () => (
   </svg>
 );
 
-const ProductDetailPage = () => {
+// Product Content Component (uses useSearchParams)
+function ProductContent() {
   const { addToCart, toggleFavorite, isFavorite } = useCart();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -596,6 +598,20 @@ const ProductDetailPage = () => {
       </div>
     </>
   );
-};
+}
 
-export default ProductDetailPage;
+// Main Product Page Component with Suspense
+export default function ProductDetailPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-orange-500 mx-auto"></div>
+          <p className="mt-4 text-gray-600">جاري تحميل المنتج...</p>
+        </div>
+      </div>
+    }>
+      <ProductContent />
+    </Suspense>
+  );
+}
