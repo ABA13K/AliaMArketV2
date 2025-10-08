@@ -21,6 +21,15 @@ interface Product {
   stock_quantity: number;
   specifications?: { name: string; value: string }[];
   features?: string[];
+  category?: {
+    id: number;
+    name: string;
+  };
+  seller?: {
+    id: number;
+    name: string;
+    rating: number;
+  };
 }
 
 export default function ProductDetailPage() {
@@ -42,39 +51,54 @@ function ProductDetailContent() {
   const [error, setError] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
-  const [selectedColor, setSelectedColor] = useState<string | null>(null);
-  const [selectedSize, setSelectedSize] = useState<string | null>(null);
 
-  // Fetch product details
+  // Fetch product details from API
   useEffect(() => {
     async function fetchProduct() {
       try {
         setLoading(true);
         setError(null);
         
+        console.log('Fetching product with ID:', productId);
+        
         const res = await fetch(`https://mahmoudmohammed.site/api/public/home-page/products/${productId}`);
         
         if (!res.ok) {
-          throw new Error(`Failed to fetch product: ${res.statusText}`);
+          throw new Error(`Failed to fetch product: ${res.status} ${res.statusText}`);
         }
         
         const response = await res.json();
+        console.log('API Response:', response);
         
         if (response.data) {
-          setProduct(response.data);
-          // If API doesn't provide multiple images, create array from single image
-          if (response.data.image && !response.data.images) {
-            setProduct(prev => prev ? {
-              ...prev,
-              images: [response.data.image, response.data.image, response.data.image] // Fallback images
-            } : null);
-          }
+          const productData = response.data;
+          
+          // Transform API data to match our interface
+          const transformedProduct: Product = {
+            id: productData.id,
+            name: productData.name,
+            description: productData.description || "لا يوجد وصف متوفر لهذا المنتج",
+            price_after_discount: productData.price_after_discount || productData.price,
+            original_price: productData.original_price || productData.price_after_discount,
+            discount_percentage: productData.discount_percentage || 0,
+            total_rating: productData.total_rating || 0,
+            image: productData.image || '/placeholder-product.jpg',
+            stock_quantity: productData.stock_quantity || productData.quantity || 10,
+            category: productData.category,
+            seller: productData.seller,
+            // Create multiple images array from single image for gallery
+            images: productData.images && productData.images.length > 0 
+              ? productData.images 
+              : [productData.image || '/placeholder-product.jpg']
+          };
+          
+          setProduct(transformedProduct);
         } else {
-          throw new Error('Product not found');
+          throw new Error('Product data not found in response');
         }
       } catch (err: any) {
-        setError(err.message);
         console.error('Error fetching product:', err);
+        setError(err.message || 'حدث خطأ في تحميل المنتج');
       } finally {
         setLoading(false);
       }
@@ -85,48 +109,58 @@ function ProductDetailContent() {
     }
   }, [productId]);
 
-  // Mock data for demonstration (remove when API is ready)
-  const mockProduct: Product = {
-    id: parseInt(productId),
-    name: "ساعة ذكية ماركة أبل - الجيل السابع",
-    description: "ساعة ذكية متطورة بشاشة Retina دقيقة توفر تتبعًا متقدمًا للصحة واللياقة البدنية مع مقاومة للماء حتى 50 متراً.",
-    price_after_discount: "1,250,000 ل.س",
-    original_price: "1,500,000 ل.س",
-    discount_percentage: 15,
-    total_rating: 4.5,
-    image: "/categories/clothing.jpg",
-    images: [
-      "/categories/clothing.jpg",
-      "/categories/electronics.jpg", 
-      "/categories/phones.jpg",
-      "/categories/clothing.jpg"
-    ],
-    stock_quantity: 50,
-    specifications: [
-      { name: "الماركة", value: "أبل" },
-      { name: "الموديل", value: "Series 7" },
-      { name: "حجم الشاشة", value: "1.9 بوصة" },
-      { name: "الدقة", value: "396x484 بيكسل" },
-      { name: "مقاومة الماء", value: "50 متر" },
-      { name: "مدة البطارية", value: "18 ساعة" }
-    ],
-    features: [
-      "شاشة Retina دقيقة",
-      "مقاومة الماء حتى 50م",
-      "تتبع اللياقة والنوم",
-      "بطارية تدوم 18 ساعة",
-      "شاحن سريع متضمن"
-    ]
+  // Generate features from product data
+  const generateFeatures = (product: Product): string[] => {
+    const features: string[] = [];
+    
+    if (product.discount_percentage > 0) {
+      features.push(`خصم ${product.discount_percentage}%`);
+    }
+    
+    if (product.stock_quantity > 0) {
+      features.push(`متوفر ${product.stock_quantity} قطعة`);
+    } else {
+      features.push("غير متوفر حالياً");
+    }
+    
+    if (product.total_rating > 0) {
+      features.push(`تقييم ${product.total_rating} من 5`);
+    }
+    
+    if (product.category) {
+      features.push(`الفئة: ${product.category.name}`);
+    }
+    
+    return features;
   };
 
-  // Use mock data if API fails (remove when API is ready)
-  useEffect(() => {
-    if (!product && !loading) {
-      setProduct(mockProduct);
+  // Generate specifications from product data
+  const generateSpecifications = (product: Product) => {
+    const specs = [
+      { name: "السعر الأصلي", value: product.original_price },
+      { name: "السعر بعد الخصم", value: product.price_after_discount },
+      { name: "نسبة الخصم", value: product.discount_percentage > 0 ? `${product.discount_percentage}%` : "لا يوجد" },
+      { name: "التقييم", value: `${product.total_rating} / 5` },
+      { name: "الكمية المتاحة", value: product.stock_quantity.toString() },
+    ];
+    
+    if (product.category) {
+      specs.push({ name: "الفئة", value: product.category.name });
     }
-  }, [product, loading]);
+    
+    if (product.seller) {
+      specs.push({ name: "البائع", value: product.seller.name });
+    }
+    
+    return specs;
+  };
 
-  const increaseQuantity = () => setQuantity(prev => prev + 1);
+  const increaseQuantity = () => {
+    if (product && quantity < product.stock_quantity) {
+      setQuantity(prev => prev + 1);
+    }
+  };
+
   const decreaseQuantity = () => quantity > 1 && setQuantity(prev => prev - 1);
 
   const handleAddToCart = () => {
@@ -139,7 +173,7 @@ function ProductDetailContent() {
       img: product.image,
       quantity: quantity,
       oldPrice: product.discount_percentage > 0 ? product.original_price : undefined,
-      category: "electronics"
+      category: product.category?.name || "عام"
     };
 
     addToCart(cartItem);
@@ -163,16 +197,28 @@ function ProductDetailContent() {
           <div className="text-red-500 text-6xl mb-4">⚠️</div>
           <h2 className="text-2xl font-bold text-gray-800 mb-2">خطأ في تحميل المنتج</h2>
           <p className="text-gray-600 mb-4">{error || "المنتج غير موجود"}</p>
-          <button 
-            onClick={() => window.location.reload()}
-            className="bg-orange-500 text-white px-6 py-2 rounded-lg hover:bg-orange-600 transition"
-          >
-            حاول مرة أخرى
-          </button>
+          <div className="flex gap-3 justify-center">
+            <button 
+              onClick={() => window.location.reload()}
+              className="bg-orange-500 text-white px-6 py-2 rounded-lg hover:bg-orange-600 transition"
+            >
+              حاول مرة أخرى
+            </button>
+            <button 
+              onClick={() => router.push('/')}
+              className="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition"
+            >
+              العودة للرئيسية
+            </button>
+          </div>
         </div>
       </div>
     );
   }
+
+  const features = generateFeatures(product);
+  const specifications = generateSpecifications(product);
+  const images = product.images || [product.image];
 
   return (
     <div dir="rtl" className="min-h-screen bg-gray-50">
@@ -240,18 +286,21 @@ function ProductDetailContent() {
             {/* Main Image */}
             <div className="relative aspect-square overflow-hidden group">
               <Image
-                src={product.images?.[selectedImage] || product.image}
+                src={images[selectedImage]}
                 alt={product.name}
                 fill
                 className="object-contain transition-transform duration-300 group-hover:scale-105"
                 priority
+                onError={(e) => {
+                  e.currentTarget.src = '/placeholder-product.jpg';
+                }}
               />
               
               {/* Navigation Buttons */}
-              {product.images && product.images.length > 1 && (
+              {images.length > 1 && (
                 <>
                   <button 
-                    onClick={() => setSelectedImage(prev => prev === 0 ? (product.images?.length || 1) - 1 : prev - 1)}
+                    onClick={() => setSelectedImage(prev => prev === 0 ? images.length - 1 : prev - 1)}
                     className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white/90 rounded-full p-2 shadow-lg hover:bg-white transition"
                   >
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -259,7 +308,7 @@ function ProductDetailContent() {
                     </svg>
                   </button>
                   <button 
-                    onClick={() => setSelectedImage(prev => prev === (product.images?.length || 1) - 1 ? 0 : prev + 1)}
+                    onClick={() => setSelectedImage(prev => prev === images.length - 1 ? 0 : prev + 1)}
                     className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/90 rounded-full p-2 shadow-lg hover:bg-white transition"
                   >
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -270,9 +319,9 @@ function ProductDetailContent() {
               )}
               
               {/* Image Counter */}
-              {product.images && product.images.length > 1 && (
+              {images.length > 1 && (
                 <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black/50 text-white text-sm px-3 py-1 rounded-full">
-                  {selectedImage + 1} / {product.images.length}
+                  {selectedImage + 1} / {images.length}
                 </div>
               )}
               
@@ -285,10 +334,10 @@ function ProductDetailContent() {
             </div>
             
             {/* Thumbnails */}
-            {product.images && product.images.length > 1 && (
+            {images.length > 1 && (
               <div className="p-4 border-t border-gray-100">
                 <div className="flex gap-3 overflow-x-auto pb-2">
-                  {product.images.map((image, index) => (
+                  {images.map((image, index) => (
                     <button
                       key={index}
                       onClick={() => setSelectedImage(index)}
@@ -302,6 +351,9 @@ function ProductDetailContent() {
                         width={64}
                         height={64}
                         className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.src = '/placeholder-product.jpg';
+                        }}
                       />
                     </button>
                   ))}
@@ -329,7 +381,7 @@ function ProductDetailContent() {
                   ))}
                 </div>
                 <span className="text-sm text-gray-500">
-                  {product.total_rating} ({Math.floor(Math.random() * 100) + 50} تقييم)
+                  {product.total_rating} / 5
                 </span>
               </div>
             </div>
@@ -338,7 +390,7 @@ function ProductDetailContent() {
             <div className="bg-orange-50 p-4 rounded-xl border border-orange-200">
               <div className="flex items-end gap-3">
                 <span className="text-2xl font-bold text-orange-600">{product.price_after_discount}</span>
-                {product.discount_percentage > 0 && (
+                {product.discount_percentage > 0 && product.original_price !== product.price_after_discount && (
                   <span className="text-lg text-gray-500 line-through">{product.original_price}</span>
                 )}
               </div>
@@ -347,7 +399,7 @@ function ProductDetailContent() {
                   وفر {product.discount_percentage}% من السعر الأصلي
                 </p>
               )}
-              <p className="text-sm text-green-600 mt-1">
+              <p className={`text-sm mt-1 ${product.stock_quantity > 0 ? "text-green-600" : "text-red-600"}`}>
                 {product.stock_quantity > 0 ? `متوفر (${product.stock_quantity} قطعة)` : "غير متوفر"}
               </p>
             </div>
@@ -359,11 +411,11 @@ function ProductDetailContent() {
             </div>
             
             {/* Features */}
-            {product.features && product.features.length > 0 && (
+            {features.length > 0 && (
               <div>
                 <h3 className="text-lg font-medium text-gray-800 mb-2">المميزات</h3>
                 <ul className="space-y-2">
-                  {product.features.map((feature, index) => (
+                  {features.map((feature, index) => (
                     <li key={index} className="flex items-start">
                       <svg className="h-5 w-5 text-orange-500 mt-0.5 mr-2 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
                         <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
@@ -391,13 +443,17 @@ function ProductDetailContent() {
                 <span className="px-4 py-1 text-lg font-medium">{quantity}</span>
                 <button 
                   onClick={increaseQuantity}
-                  className="px-3 py-2 bg-gray-100 hover:bg-gray-200 transition"
+                  className="px-3 py-2 bg-gray-100 hover:bg-gray-200 transition disabled:opacity-50"
+                  disabled={product.stock_quantity > 0 && quantity >= product.stock_quantity}
                 >
                   <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                   </svg>
                 </button>
               </div>
+              {product.stock_quantity > 0 && (
+                <p className="text-sm text-gray-500 mt-1">الحد الأقصى: {product.stock_quantity} قطعة</p>
+              )}
             </div>
             
             {/* Action Buttons */}
@@ -424,11 +480,11 @@ function ProductDetailContent() {
         </div>
 
         {/* Specifications */}
-        {product.specifications && product.specifications.length > 0 && (
+        {specifications.length > 0 && (
           <div className="mt-12 bg-white rounded-2xl shadow-md overflow-hidden">
-            <h2 className="text-xl font-bold text-gray-800 p-6 pb-4">المواصفات الفنية</h2>
+            <h2 className="text-xl font-bold text-gray-800 p-6 pb-4">معلومات المنتج</h2>
             <div className="border-t border-gray-100">
-              {product.specifications.map((spec, index) => (
+              {specifications.map((spec, index) => (
                 <div 
                   key={index} 
                   className={`flex items-center p-4 ${index % 2 === 0 ? "bg-gray-50" : "bg-white"}`}
