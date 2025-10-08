@@ -7,28 +7,59 @@ import Image from "next/image";
 import Link from "next/link";
 import { useCart } from "../context/CartContext";
 
-interface Product {
+interface ProductImage {
+  id: number;
+  image_path: string;
+}
+
+interface ProductProperty {
+  id_properties: number;
+  key: string;
+  value: string;
+}
+
+interface ProductVariant {
+  // Define based on your variant structure
   id: number;
   name: string;
+  price: string;
+}
+
+interface Product {
+  id_product: number;
+  name: string;
   description: string;
-  price_after_discount: string;
+  main_image: string;
   original_price: string;
   discount_percentage: number;
+  price_after_discount: string;
+  quantity: number;
   total_rating: number;
+  sales_count: number;
+  is_active: number;
+  vendor_id: number;
+  sub_category_id: number;
+  sub_category_name: string;
+  created_at: string;
+  updated_at: string;
+  images: ProductImage[];
+  properties: ProductProperty[];
+  variants: ProductVariant[];
+}
+
+interface SimilarProduct {
+  id: number;
+  name: string;
+  price: string;
   image: string;
-  images?: string[];
-  category_id?: number;
-  stock_quantity: number;
-  specifications?: { name: string; value: string }[];
-  features?: string[];
-  category?: {
-    id: number;
-    name: string;
-  };
-  seller?: {
-    id: number;
-    name: string;
-    rating: number;
+  rating: number;
+}
+
+interface ApiResponse {
+  message: string;
+  data: {
+    product: Product;
+    similar_products: SimilarProduct[];
   };
 }
 
@@ -47,6 +78,7 @@ function ProductDetailContent() {
   
   const { addToCart, toggleFavorite, isFavorite } = useCart();
   const [product, setProduct] = useState<Product | null>(null);
+  const [similarProducts, setSimilarProducts] = useState<SimilarProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState(0);
@@ -61,38 +93,18 @@ function ProductDetailContent() {
         
         console.log('Fetching product with ID:', productId);
         
-        const res = await fetch(`https://mahmoudmohammed.site/api/public/home-page/products/${productId}`);
+        const res = await fetch(`https://mahmoudmohammed.site/api/public/products/${productId}`);
         
         if (!res.ok) {
           throw new Error(`Failed to fetch product: ${res.status} ${res.statusText}`);
         }
         
-        const response = await res.json();
+        const response: ApiResponse = await res.json();
         console.log('API Response:', response);
         
-        if (response.data) {
-          const productData = response.data;
-          
-          // Transform API data to match our interface
-          const transformedProduct: Product = {
-            id: productData.id,
-            name: productData.name,
-            description: productData.description || "لا يوجد وصف متوفر لهذا المنتج",
-            price_after_discount: productData.price_after_discount || productData.price,
-            original_price: productData.original_price || productData.price_after_discount,
-            discount_percentage: productData.discount_percentage || 0,
-            total_rating: productData.total_rating || 0,
-            image: productData.image || '/placeholder-product.jpg',
-            stock_quantity: productData.stock_quantity || productData.quantity || 10,
-            category: productData.category,
-            seller: productData.seller,
-            // Create multiple images array from single image for gallery
-            images: productData.images && productData.images.length > 0 
-              ? productData.images 
-              : [productData.image || '/placeholder-product.jpg']
-          };
-          
-          setProduct(transformedProduct);
+        if (response.data && response.data.product) {
+          setProduct(response.data.product);
+          setSimilarProducts(response.data.similar_products || []);
         } else {
           throw new Error('Product data not found in response');
         }
@@ -109,54 +121,33 @@ function ProductDetailContent() {
     }
   }, [productId]);
 
-  // Generate features from product data
-  const generateFeatures = (product: Product): string[] => {
-    const features: string[] = [];
+  // Get all product images including main image
+  const getAllImages = (product: Product): string[] => {
+    const images: string[] = [product.main_image];
     
-    if (product.discount_percentage > 0) {
-      features.push(`خصم ${product.discount_percentage}%`);
+    // Add additional images from images array
+    if (product.images && product.images.length > 0) {
+      product.images.forEach(img => {
+        if (img.image_path && !images.includes(img.image_path)) {
+          images.push(img.image_path);
+        }
+      });
     }
     
-    if (product.stock_quantity > 0) {
-      features.push(`متوفر ${product.stock_quantity} قطعة`);
-    } else {
-      features.push("غير متوفر حالياً");
-    }
-    
-    if (product.total_rating > 0) {
-      features.push(`تقييم ${product.total_rating} من 5`);
-    }
-    
-    if (product.category) {
-      features.push(`الفئة: ${product.category.name}`);
-    }
-    
-    return features;
+    return images;
   };
 
-  // Generate specifications from product data
-  const generateSpecifications = (product: Product) => {
-    const specs = [
-      { name: "السعر الأصلي", value: product.original_price },
-      { name: "السعر بعد الخصم", value: product.price_after_discount },
-      { name: "نسبة الخصم", value: product.discount_percentage > 0 ? `${product.discount_percentage}%` : "لا يوجد" },
-      { name: "التقييم", value: `${product.total_rating} / 5` },
-      { name: "الكمية المتاحة", value: product.stock_quantity.toString() },
-    ];
-    
-    if (product.category) {
-      specs.push({ name: "الفئة", value: product.category.name });
-    }
-    
-    if (product.seller) {
-      specs.push({ name: "البائع", value: product.seller.name });
-    }
-    
-    return specs;
+  // Format price with currency
+  const formatPrice = (price: string): string => {
+    const numericPrice = parseFloat(price);
+    return new Intl.NumberFormat('ar-SY', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(numericPrice) + ' ل.س';
   };
 
   const increaseQuantity = () => {
-    if (product && quantity < product.stock_quantity) {
+    if (product && quantity < product.quantity) {
       setQuantity(prev => prev + 1);
     }
   };
@@ -167,13 +158,13 @@ function ProductDetailContent() {
     if (!product) return;
 
     const cartItem = {
-      id: product.id,
+      id: product.id_product,
       name: product.name,
-      price: product.price_after_discount,
-      img: product.image,
+      price: formatPrice(product.price_after_discount),
+      img: product.main_image,
       quantity: quantity,
-      oldPrice: product.discount_percentage > 0 ? product.original_price : undefined,
-      category: product.category?.name || "عام"
+      oldPrice: product.discount_percentage > 0 ? formatPrice(product.original_price) : undefined,
+      category: product.sub_category_name
     };
 
     addToCart(cartItem);
@@ -216,9 +207,9 @@ function ProductDetailContent() {
     );
   }
 
-  const features = generateFeatures(product);
-  const specifications = generateSpecifications(product);
-  const images = product.images || [product.image];
+  const images = getAllImages(product);
+  const hasDiscount = product.discount_percentage > 0;
+  const isOutOfStock = product.quantity === 0;
 
   return (
     <div dir="rtl" className="min-h-screen bg-gray-50">
@@ -238,19 +229,19 @@ function ProductDetailContent() {
           <div className="flex items-center space-x-4 space-x-reverse">
             <button 
               onClick={() => toggleFavorite({
-                id: product.id,
+                id: product.id_product,
                 name: product.name,
-                price: product.price_after_discount,
-                img: product.image,
-                oldPrice: product.discount_percentage > 0 ? product.original_price : undefined,
+                price: formatPrice(product.price_after_discount),
+                img: product.main_image,
+                oldPrice: hasDiscount ? formatPrice(product.original_price) : undefined,
               })}
               className={`p-2 rounded-full transition ${
-                isFavorite(product.id) 
+                isFavorite(product.id_product) 
                   ? "text-red-500 bg-red-50" 
                   : "text-gray-400 hover:text-red-500 hover:bg-red-50"
               }`}
             >
-              <svg className="w-6 h-6" fill={isFavorite(product.id) ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-6 h-6" fill={isFavorite(product.id_product) ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
               </svg>
             </button>
@@ -326,9 +317,16 @@ function ProductDetailContent() {
               )}
               
               {/* Discount Badge */}
-              {product.discount_percentage > 0 && (
+              {hasDiscount && (
                 <span className="absolute top-4 left-4 bg-orange-500 text-white text-sm font-bold px-3 py-1 rounded-full">
                   خصم {product.discount_percentage}%
+                </span>
+              )}
+              
+              {/* Out of Stock Badge */}
+              {isOutOfStock && (
+                <span className="absolute top-4 left-4 bg-red-500 text-white text-sm font-bold px-3 py-1 rounded-full">
+                  غير متوفر
                 </span>
               )}
             </div>
@@ -364,43 +362,56 @@ function ProductDetailContent() {
 
           {/* Product Details */}
           <div className="space-y-6">
-            {/* Title and Rating */}
+            {/* Title and Category */}
             <div>
               <h1 className="text-2xl md:text-3xl font-bold text-gray-900">{product.name}</h1>
-              <div className="flex items-center mt-3">
-                <div className="flex items-center mr-2">
-                  {[...Array(5)].map((_, i) => (
-                    <svg 
-                      key={i}
-                      className={`h-5 w-5 ${i < Math.floor(product.total_rating) ? "text-yellow-400" : "text-gray-300"}`} 
-                      viewBox="0 0 20 20" 
-                      fill="currentColor"
-                    >
-                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                    </svg>
-                  ))}
-                </div>
-                <span className="text-sm text-gray-500">
-                  {product.total_rating} / 5
+              <div className="flex items-center mt-2">
+                <span className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+                  {product.sub_category_name}
                 </span>
               </div>
+            </div>
+            
+            {/* Rating */}
+            <div className="flex items-center">
+              <div className="flex items-center mr-2">
+                {[...Array(5)].map((_, i) => (
+                  <svg 
+                    key={i}
+                    className={`h-5 w-5 ${i < Math.floor(product.total_rating) ? "text-yellow-400" : "text-gray-300"}`} 
+                    viewBox="0 0 20 20" 
+                    fill="currentColor"
+                  >
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                  </svg>
+                ))}
+              </div>
+              <span className="text-sm text-gray-500">
+                {product.total_rating > 0 ? `${product.total_rating} / 5` : "لا توجد تقييمات بعد"}
+              </span>
+              <span className="text-sm text-gray-400 mr-3">•</span>
+              <span className="text-sm text-gray-500">{product.sales_count} مبيعات</span>
             </div>
             
             {/* Price */}
             <div className="bg-orange-50 p-4 rounded-xl border border-orange-200">
               <div className="flex items-end gap-3">
-                <span className="text-2xl font-bold text-orange-600">{product.price_after_discount}</span>
-                {product.discount_percentage > 0 && product.original_price !== product.price_after_discount && (
-                  <span className="text-lg text-gray-500 line-through">{product.original_price}</span>
+                <span className="text-2xl font-bold text-orange-600">
+                  {formatPrice(product.price_after_discount)}
+                </span>
+                {hasDiscount && (
+                  <span className="text-lg text-gray-500 line-through">
+                    {formatPrice(product.original_price)}
+                  </span>
                 )}
               </div>
-              {product.discount_percentage > 0 && (
+              {hasDiscount && (
                 <p className="text-sm text-orange-600 mt-1">
                   وفر {product.discount_percentage}% من السعر الأصلي
                 </p>
               )}
-              <p className={`text-sm mt-1 ${product.stock_quantity > 0 ? "text-green-600" : "text-red-600"}`}>
-                {product.stock_quantity > 0 ? `متوفر (${product.stock_quantity} قطعة)` : "غير متوفر"}
+              <p className={`text-sm mt-1 ${!isOutOfStock ? "text-green-600" : "text-red-600"}`}>
+                {!isOutOfStock ? `متوفر (${product.quantity} قطعة)` : "غير متوفر"}
               </p>
             </div>
             
@@ -410,57 +421,40 @@ function ProductDetailContent() {
               <p className="text-gray-700 leading-relaxed">{product.description}</p>
             </div>
             
-            {/* Features */}
-            {features.length > 0 && (
+            {/* Quantity */}
+            {!isOutOfStock && (
               <div>
-                <h3 className="text-lg font-medium text-gray-800 mb-2">المميزات</h3>
-                <ul className="space-y-2">
-                  {features.map((feature, index) => (
-                    <li key={index} className="flex items-start">
-                      <svg className="h-5 w-5 text-orange-500 mt-0.5 mr-2 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                      </svg>
-                      <span className="text-gray-700">{feature}</span>
-                    </li>
-                  ))}
-                </ul>
+                <h3 className="text-lg font-medium text-gray-800 mb-2">الكمية:</h3>
+                <div className="flex items-center gap-3 w-fit border border-gray-300 rounded-lg overflow-hidden">
+                  <button 
+                    onClick={decreaseQuantity}
+                    className="px-3 py-2 bg-gray-100 hover:bg-gray-200 transition disabled:opacity-50"
+                    disabled={quantity <= 1}
+                  >
+                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                    </svg>
+                  </button>
+                  <span className="px-4 py-1 text-lg font-medium">{quantity}</span>
+                  <button 
+                    onClick={increaseQuantity}
+                    className="px-3 py-2 bg-gray-100 hover:bg-gray-200 transition disabled:opacity-50"
+                    disabled={quantity >= product.quantity}
+                  >
+                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                  </button>
+                </div>
+                <p className="text-sm text-gray-500 mt-1">الحد الأقصى: {product.quantity} قطعة</p>
               </div>
             )}
-            
-            {/* Quantity */}
-            <div>
-              <h3 className="text-lg font-medium text-gray-800 mb-2">الكمية:</h3>
-              <div className="flex items-center gap-3 w-fit border border-gray-300 rounded-lg overflow-hidden">
-                <button 
-                  onClick={decreaseQuantity}
-                  className="px-3 py-2 bg-gray-100 hover:bg-gray-200 transition disabled:opacity-50"
-                  disabled={quantity <= 1}
-                >
-                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
-                  </svg>
-                </button>
-                <span className="px-4 py-1 text-lg font-medium">{quantity}</span>
-                <button 
-                  onClick={increaseQuantity}
-                  className="px-3 py-2 bg-gray-100 hover:bg-gray-200 transition disabled:opacity-50"
-                  disabled={product.stock_quantity > 0 && quantity >= product.stock_quantity}
-                >
-                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
-                </button>
-              </div>
-              {product.stock_quantity > 0 && (
-                <p className="text-sm text-gray-500 mt-1">الحد الأقصى: {product.stock_quantity} قطعة</p>
-              )}
-            </div>
             
             {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row gap-3 pt-4">
               <button 
                 onClick={handleAddToCart}
-                disabled={product.stock_quantity === 0}
+                disabled={isOutOfStock}
                 className="flex-1 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-400 text-white py-3 px-6 rounded-lg font-medium transition flex items-center justify-center gap-2 shadow-md hover:shadow-lg disabled:cursor-not-allowed"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -470,7 +464,7 @@ function ProductDetailContent() {
               </button>
               <button 
                 onClick={buyNow}
-                disabled={product.stock_quantity === 0}
+                disabled={isOutOfStock}
                 className="flex-1 bg-blue-700 hover:bg-blue-800 disabled:bg-gray-400 text-white py-3 px-6 rounded-lg font-medium transition shadow-md hover:shadow-lg disabled:cursor-not-allowed"
               >
                 شراء الآن
@@ -479,18 +473,60 @@ function ProductDetailContent() {
           </div>
         </div>
 
-        {/* Specifications */}
-        {specifications.length > 0 && (
+        {/* Properties/Features */}
+        {product.properties && product.properties.length > 0 && (
           <div className="mt-12 bg-white rounded-2xl shadow-md overflow-hidden">
-            <h2 className="text-xl font-bold text-gray-800 p-6 pb-4">معلومات المنتج</h2>
+            <h2 className="text-xl font-bold text-gray-800 p-6 pb-4">المواصفات</h2>
             <div className="border-t border-gray-100">
-              {specifications.map((spec, index) => (
+              {product.properties.map((property, index) => (
                 <div 
-                  key={index} 
-                  className={`flex items-center p-4 ${index % 2 === 0 ? "bg-gray-50" : "bg-white"}`}
+                  key={property.id_properties} 
+                  className={`flex items-start p-4 ${index % 2 === 0 ? "bg-gray-50" : "bg-white"}`}
                 >
-                  <span className="w-1/3 font-medium text-gray-700">{spec.name}</span>
-                  <span className="w-2/3 text-gray-600">{spec.value}</span>
+                  <span className="w-1/3 font-medium text-gray-700 min-w-[120px]">{property.key}</span>
+                  <span className="w-2/3 text-gray-600 leading-relaxed">{property.value}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Similar Products */}
+        {similarProducts.length > 0 && (
+          <div className="mt-12">
+            <h2 className="text-xl font-bold text-gray-800 mb-6">منتجات مشابهة</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {similarProducts.map(similarProduct => (
+                <div key={similarProduct.id} className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition group">
+                  <Link href={`/product/${similarProduct.id}`} className="block">
+                    <div className="relative aspect-square bg-gray-100">
+                      <Image
+                        src={similarProduct.image}
+                        alt={similarProduct.name}
+                        fill
+                        className="object-cover group-hover:scale-105 transition-transform"
+                        onError={(e) => {
+                          e.currentTarget.src = '/placeholder-product.jpg';
+                        }}
+                      />
+                    </div>
+                    <div className="p-4">
+                      <h3 className="font-medium text-gray-800 mb-1 line-clamp-2">{similarProduct.name}</h3>
+                      <div className="flex items-center mb-2">
+                        {[...Array(5)].map((_, i) => (
+                          <svg 
+                            key={i}
+                            className={`h-4 w-4 ${i < Math.floor(similarProduct.rating) ? "text-yellow-400" : "text-gray-300"}`} 
+                            viewBox="0 0 20 20" 
+                            fill="currentColor"
+                          >
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                          </svg>
+                        ))}
+                      </div>
+                      <p className="font-bold text-orange-600">{formatPrice(similarProduct.price)}</p>
+                    </div>
+                  </Link>
                 </div>
               ))}
             </div>
