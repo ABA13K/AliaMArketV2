@@ -1138,121 +1138,108 @@ const [errorRandom, setErrorRandom] = useState<string | null>(null);
     ) : (
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
         {latestProducts.map((product) => (
-          <div key={product.id} className="group bg-white rounded-xl shadow-md hover:shadow-xl transition overflow-hidden border border-gray-100">
-            <Link 
-  href={{
-    pathname: '/product',
-    query: { 
-      id: product.id,
-      name: product.name,
-      price: product.price_after_discount,
-      oldPrice: product.original_price,
-      image: product.image,
-      discount: product.discount_percentage,
-      rating: product.total_rating
-    }
-  }}
-  className="block"
->
-              <div className="relative h-60 overflow-hidden">
-                <Image
-                  src={product.image || '/placeholder-product.jpg'}
-                  alt={product.name}
-                  width={300}
-                  height={300}
-                  className="w-full h-full object-contain p-4 transition-transform duration-300 group-hover:scale-105"
-                  onError={(e) => {
-                    e.currentTarget.src = '/placeholder-product.jpg';
-                  }}
-                />
-                {product.discount_percentage > 0 && (
-                  <span className="absolute top-3 left-3 bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded">
-                    خصم {product.discount_percentage}%
-                  </span>
-                )}
-                <button 
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    toggleFavorite({
-                      id: product.id,
-                      name: product.name,
-                      price: product.price_after_discount,
-                      img: product.image,
-                      oldPrice: product.discount_percentage > 0 ? product.original_price : undefined,
-                    });
-                  }}
-                  className={`absolute top-3 right-3 bg-white/80 hover:bg-white rounded-full w-8 h-8 flex items-center justify-center shadow-sm transition ${
-                    isFavorite(product.id) ? 'text-red-500' : 'text-gray-600'
-                  }`}
-                >
-                  <svg 
-                    xmlns="http://www.w3.org/2000/svg" 
-                    className="h-5 w-5" 
-                    fill={isFavorite(product.id) ? "currentColor" : "none"} 
-                    viewBox="0 0 24 24" 
-                    stroke="currentColor"
-                  >
-                    <path 
-                      strokeLinecap="round" 
-                      strokeLinejoin="round" 
-                      strokeWidth={2} 
-                      d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" 
-                    />
-                  </svg>
-                </button>
-              </div>
-              <div className="p-5">
-                <h3 className="font-bold text-lg text-gray-800 mb-2 line-clamp-2 h-14">{product.name}</h3>
-                <div className="flex items-center mb-3">
-                  {[...Array(5)].map((_, i) => (
-                    <svg 
-                      key={i}
-                      xmlns="http://www.w3.org/2000/svg" 
-                      className={`h-4 w-4 ${i < Math.floor(product.total_rating) ? 'text-yellow-400' : 'text-gray-300'}`} 
-                      viewBox="0 0 20 20" 
-                      fill="currentColor"
-                    >
-                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                    </svg>
-                  ))}
-                  <span className="text-sm text-gray-500 mr-2">({product.total_rating})</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xl font-bold text-orange-600">
-                      {product.price_after_discount} ل.س
-                    </p>
-                    {product.discount_percentage > 0 && (
-                      <p className="text-sm text-gray-400 line-through">
-                        {product.original_price} ل.س
-                      </p>
-                    )}
-                  </div>
-                  <button 
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      handleAddToCart({
-                        id: product.id,
-                        name: product.name,
-                        price: product.price_after_discount,
-                        img: product.image,
-                        quantity: 1,
-                        oldPrice: product.discount_percentage > 0 ? product.original_price : undefined,
-                      });
-                    }}
-                    className="bg-orange-500 hover:bg-orange-600 text-white p-2 rounded-lg transition shadow hover:shadow-md"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-            </Link>
+  <div key={product.id} className="group bg-white rounded-xl shadow-md hover:shadow-xl transition overflow-hidden border border-gray-100">
+    {/* REPLACE THIS LINK */}
+    <Link href={`/product/${product.id}`} className="block">
+      <div className="relative h-60 overflow-hidden">
+        <Image
+          src={product.image || '/placeholder-product.jpg'}
+          alt={product.name}
+          width={300}
+          height={300}
+          className="w-full h-full object-contain p-4 transition-transform duration-300 group-hover:scale-105"
+          onError={(e) => {
+            e.currentTarget.src = '/placeholder-product.jpg';
+          }}
+        />
+        {product.discount_percentage > 0 && (
+          <span className="absolute top-3 left-3 bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded">
+            خصم {product.discount_percentage}%
+          </span>
+        )}
+        <button 
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleFavorite({
+              id: product.id,
+              name: product.name,
+              price: product.price_after_discount,
+              img: product.image,
+              oldPrice: product.discount_percentage > 0 ? product.original_price : undefined,
+            });
+          }}
+          className={`absolute top-3 right-3 bg-white/80 hover:bg-white rounded-full w-8 h-8 flex items-center justify-center shadow-sm transition ${
+            isFavorite(product.id) ? 'text-red-500' : 'text-gray-600'
+          }`}
+        >
+          <svg 
+            xmlns="http://www.w3.org/2000/svg" 
+            className="h-5 w-5" 
+            fill={isFavorite(product.id) ? "currentColor" : "none"} 
+            viewBox="0 0 24 24" 
+            stroke="currentColor"
+          >
+            <path 
+              strokeLinecap="round" 
+              strokeLinejoin="round" 
+              strokeWidth={2} 
+              d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" 
+            />
+          </svg>
+        </button>
+      </div>
+      <div className="p-5">
+        <h3 className="font-bold text-lg text-gray-800 mb-2 line-clamp-2 h-14">{product.name}</h3>
+        <div className="flex items-center mb-3">
+          {[...Array(5)].map((_, i) => (
+            <svg 
+              key={i}
+              xmlns="http://www.w3.org/2000/svg" 
+              className={`h-4 w-4 ${i < Math.floor(product.total_rating) ? 'text-yellow-400' : 'text-gray-300'}`} 
+              viewBox="0 0 20 20" 
+              fill="currentColor"
+            >
+              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+            </svg>
+          ))}
+          <span className="text-sm text-gray-500 mr-2">({product.total_rating})</span>
+        </div>
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-xl font-bold text-orange-600">
+              {product.price_after_discount} ل.س
+            </p>
+            {product.discount_percentage > 0 && (
+              <p className="text-sm text-gray-400 line-through">
+                {product.original_price} ل.س
+              </p>
+            )}
           </div>
-        ))}
+          <button 
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleAddToCart({
+                id: product.id,
+                name: product.name,
+                price: product.price_after_discount,
+                img: product.image,
+                quantity: 1,
+                oldPrice: product.discount_percentage > 0 ? product.original_price : undefined,
+              });
+            }}
+            className="bg-orange-500 hover:bg-orange-600 text-white p-2 rounded-lg transition shadow hover:shadow-md"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </Link>
+  </div>
+))}
       </div>
     )}
   </div>
