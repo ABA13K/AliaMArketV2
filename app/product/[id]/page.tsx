@@ -290,7 +290,7 @@ export default function ProductDetailPage() {
                 <div className="flex items-center gap-3 w-fit border border-gray-300 rounded-lg overflow-hidden mr-auto">
                   <button 
                     onClick={increaseQuantity}
-                    className="px-3 py-2 bg-gray-100 hover:bg-gray-200 transition disabled:opacity-50"
+                    className="px-3 py-2 bg-black-100 hover:bg-gray-200 transition disabled:opacity-50"
                     disabled={quantity >= product.quantity}
                   >
                     <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -300,7 +300,7 @@ export default function ProductDetailPage() {
                   <span className="px-4 py-1 text-lg font-medium text-black">{quantity}</span>
                   <button 
                     onClick={decreaseQuantity}
-                    className="px-3 py-2 bg-gray-100 hover:bg-gray-200 transition disabled:opacity-50"
+                    className="px-3 py-2 bg-black-100 hover:bg-gray-200 transition disabled:opacity-50"
                     disabled={quantity <= 1}
                   >
                     <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
