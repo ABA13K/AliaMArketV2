@@ -297,7 +297,7 @@ export default function ProductDetailPage() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                     </svg>
                   </button>
-                  <span className="px-4 py-1 text-lg font-medium">{quantity}</span>
+                  <span className="px-4 py-1 text-lg font-medium text-black">{quantity}</span>
                   <button 
                     onClick={decreaseQuantity}
                     className="px-3 py-2 bg-gray-100 hover:bg-gray-200 transition disabled:opacity-50"
