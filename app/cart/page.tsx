@@ -127,7 +127,7 @@ export default function CartPage() {
   };
 
   const formatPrice = (price: number): string => {
-    return price.toLocaleString('ar-SY') + ' ل.س';
+    return price.toLocaleString('en-US') + ' ل.س';
   };
 
   const calculateBtcAmount = (): string => {
