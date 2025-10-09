@@ -5,6 +5,7 @@ import Head from "next/head";
 import Image from "next/image";
 import Link from "next/link";
 import { useCart } from "./context/CartContext";
+
 export default function Home() {
   const [showModal, setShowModal] = useState(false);
   const [showSidebarAd, setShowSidebarAd] = useState(true);
@@ -20,41 +21,29 @@ export default function Home() {
   const [errorCategories, setErrorCategories] = useState<string | null>(null);
   const { addToCart } = useCart();
   const [bestsellingProducts, setBestsellingProducts] = useState<BestsellingProduct[]>([]);
-    const [latestProducts, setlatestProducts] = useState<LatestProduct[]>([]);
-const { toggleFavorite, isFavorite } = useCart();
-const [loadingBestselling, setLoadingBestselling] = useState(true);
-const [loadinglastet, setLoadinglastet] = useState(true);
-
-const [errorBestselling, setErrorBestselling] = useState<string | null>(null);
-const [errorlastest, setErrorlastest] = useState<string | null>(null);
-
-const [randomProducts, setRandomProducts] = useState<any[]>([]);
-const [loadingRandom, setLoadingRandom] = useState(true);
-const [errorRandom, setErrorRandom] = useState<string | null>(null);
+  const [latestProducts, setlatestProducts] = useState<LatestProduct[]>([]);
+  const { toggleFavorite, isFavorite } = useCart();
+  const [loadingBestselling, setLoadingBestselling] = useState(true);
+  const [loadinglastet, setLoadinglastet] = useState(true);
+  const [errorBestselling, setErrorBestselling] = useState<string | null>(null);
+  const [errorlastest, setErrorlastest] = useState<string | null>(null);
+  const [randomProducts, setRandomProducts] = useState<any[]>([]);
+  const [loadingRandom, setLoadingRandom] = useState(true);
+  const [errorRandom, setErrorRandom] = useState<string | null>(null);
   
-  // Combine all products for search
- 
-  // Search function
-  const handleSearch = (query: string) => {
-    setSearchQuery(query);
-    if (query.trim() === '') {
-      setIsSearching(false);
-      setSearchResults([]);
-      return;
-    }
-    
-    setIsSearching(true);
-    const results = allProducts.filter(product =>
-      product.name.toLowerCase().includes(query.toLowerCase())
-    );
-    setSearchResults(results);
-  };
+  // Search states
+  const [apiSearchResults, setApiSearchResults] = useState<any[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+
   interface Category {
     id: number;
     name: string;
     image: string;
     products_count: number;
   }
+
   interface BestsellingProduct {
     id: number;
     name: string;
@@ -64,7 +53,8 @@ const [errorRandom, setErrorRandom] = useState<string | null>(null);
     total_rating: number;
     image: string;
   }
-   interface LatestProduct {
+
+  interface LatestProduct {
     id: number;
     name: string;
     original_price: string;
@@ -73,10 +63,93 @@ const [errorRandom, setErrorRandom] = useState<string | null>(null);
     total_rating: number;
     image: string;
   }
-  
-  // Update your state
-  
-  // Update your fetch function
+
+  // Debounced search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    if (debouncedSearch) {
+      handleSearch(debouncedSearch);
+    }
+  }, [debouncedSearch]);
+
+  // Search function with API integration
+  const handleSearch = async (query: string) => {
+    setSearchQuery(query);
+    
+    if (query.trim() === '') {
+      setIsSearching(false);
+      setSearchResults([]);
+      setApiSearchResults([]);
+      setSearchError(null);
+      return;
+    }
+    
+    setIsSearching(true);
+    setSearchLoading(true);
+    setSearchError(null);
+
+    try {
+      // First search in local products as fallback
+      const localResults = allProducts.filter(product =>
+        product.name.toLowerCase().includes(query.toLowerCase())
+      );
+      setSearchResults(localResults);
+
+      // Then search via API
+      const response = await fetch(`https://mahmoudmohammed.site/api/public/products/search?q=${encodeURIComponent(query)}`);
+      
+      if (!response.ok) {
+        throw new Error(`فشل في البحث: ${response.statusText}`);
+      }
+      
+      const apiResponse = await response.json();
+      
+      if (apiResponse.data && Array.isArray(apiResponse.data)) {
+        setApiSearchResults(apiResponse.data);
+      } else {
+        throw new Error('تنسيق البيانات غير صالح من API');
+      }
+    } catch (err: any) {
+      setSearchError(err.message);
+      console.error('Error searching products:', err);
+      setApiSearchResults([]);
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
+  // Combine local and API search results for display
+  const displaySearchResults = searchLoading ? [] : [...apiSearchResults, ...searchResults];
+
+  // Helper functions for product data
+  const getProductImage = (product: any) => {
+    return product.image || product.img || '/placeholder-product.jpg';
+  };
+
+  const getProductPrice = (product: any) => {
+    return product.price_after_discount || product.price || '0 ل.س';
+  };
+
+  const getProductOriginalPrice = (product: any) => {
+    return product.original_price || product.oldPrice;
+  };
+
+  const getProductDiscount = (product: any) => {
+    return product.discount_percentage || 0;
+  };
+
+  const getProductRating = (product: any) => {
+    return product.total_rating || product.rating || 0;
+  };
+
+  // Existing useEffect hooks
   useEffect(() => {
     async function fetchRandomProducts() {
       try {
@@ -106,6 +179,7 @@ const [errorRandom, setErrorRandom] = useState<string | null>(null);
     
     fetchRandomProducts();
   }, []);
+
   useEffect(() => {
     async function fetchlatestgProducts() {
       try {
@@ -115,7 +189,7 @@ const [errorRandom, setErrorRandom] = useState<string | null>(null);
         const res = await fetch('https://mahmoudmohammed.site/api/public/home-page/products/latest');
         
         if (!res.ok) {
-          throw new Error(`Failed to fetch bestselling products: ${res.statusText}`);
+          throw new Error(`Failed to fetch latest products: ${res.statusText}`);
         }
         
         const response = await res.json();
@@ -127,7 +201,7 @@ const [errorRandom, setErrorRandom] = useState<string | null>(null);
         }
       } catch (err: any) {
         setErrorlastest(err.message);
-        console.error('Error fetching bestselling products:', err);
+        console.error('Error fetching latest products:', err);
       } finally {
         setLoadinglastet(false);
       }
@@ -135,7 +209,8 @@ const [errorRandom, setErrorRandom] = useState<string | null>(null);
     
     fetchlatestgProducts();
   }, []);
-   useEffect(() => {
+
+  useEffect(() => {
     async function fetchBestsellingProducts() {
       try {
         setLoadingBestselling(true);
@@ -164,6 +239,7 @@ const [errorRandom, setErrorRandom] = useState<string | null>(null);
     
     fetchBestsellingProducts();
   }, []);
+
   useEffect(() => {
     async function fetchCategories() {
       try {
@@ -178,7 +254,6 @@ const [errorRandom, setErrorRandom] = useState<string | null>(null);
         
         const response = await res.json();
         
-        // Handle the API response structure
         if (response.data && Array.isArray(response.data)) {
           setCategories(response.data);
         } else {
@@ -229,10 +304,10 @@ const [errorRandom, setErrorRandom] = useState<string | null>(null);
     addToCart({
       id: product.id || Math.random(),
       name: product.name,
-      price: product.price,
-      img: product.img,
+      price: getProductPrice(product),
+      img: getProductImage(product),
       quantity: 1,
-      oldPrice: product.oldPrice,
+      oldPrice: getProductOriginalPrice(product),
       category: product.category
     });
     alert(`تمت إضافة ${product.name} إلى السلة`);
@@ -246,22 +321,6 @@ const [errorRandom, setErrorRandom] = useState<string | null>(null);
     { id: "home", name: "منزلية", icon: "🏠" },
     { id: "beauty", name: "تجميل", icon: "💄" },
     { id: "sports", name: "رياضة", icon: "⚽" }
-  ];
-
-  // بيانات الفئات للديسكتوب
-  const desktopCategories = [
-    { name: "ملابس", img: "/categories/clothing.jpg", count: "1,245 منتج" },
-    { name: "إلكترونيات", img: "/categories/electronics.jpg", count: "892 منتج" },
-    { name: "مستلزمات منزلية", img: "/categories/home.jpg", count: "1,532 منتج" },
-    { name: "تجميل", img: "/categories/beauty.jpg", count: "756 منتج" },
-    { name: "رياضة", img: "/categories/sports.jpg", count: "634 منتج" },
-    { name: "كتب", img: "/categories/books.jpg", count: "423 منتج" },
-    { name: "ألعاب", img: "/categories/toys.jpg", count: "567 منتج" },
-    { name: "مجوهرات", img: "/categories/jewelry.jpg", count: "298 منتج" },
-    { name: "أحذية", img: "/categories/shoes.jpg", count: "834 منتج" },
-    { name: "حقائب", img: "/categories/bags.jpg", count: "445 منتج" },
-    { name: "هواتف", img: "/categories/phones.jpg", count: "312 منتج" },
-    { name: "أثاث", img: "/categories/furniture.jpg", count: "678 منتج" }
   ];
 
   // بيانات المنتجات للموبايل
@@ -385,32 +444,6 @@ const [errorRandom, setErrorRandom] = useState<string | null>(null);
       price: "332,500 ل.س",
       img: "/products/skincare.jpg",
       rating: 4.0
-    },
-    { 
-      name: "حذاء رياضي", 
-      price: "945,000 ل.س",
-      oldPrice: "1,180,000 ل.س",
-      img: "/products/sneakers.jpg",
-      rating: 4.6
-    },
-    { 
-      name: "هاتف ذكي", 
-      price: "2,850,000 ل.س",
-      img: "/products/smartphone.jpg",
-      rating: 4.8
-    },
-    { 
-      name: "حقيبة ظهر", 
-      price: "425,000 ل.س",
-      img: "/products/backpack.jpg",
-      rating: 4.3
-    },
-    { 
-      name: "عطر فاخر", 
-      price: "680,000 ل.س",
-      oldPrice: "850,000 ل.س",
-      img: "/products/perfume.jpg",
-      rating: 4.4
     }
   ];
 
@@ -419,12 +452,9 @@ const [errorRandom, setErrorRandom] = useState<string | null>(null);
     { name: "لابتوب جيمنغ", price: "4,500,000 ل.س", img: "/products/laptop.jpg", rating: 4.7 },
     { name: "فستان سهرة", price: "750,000 ل.س", img: "/products/dress.jpg", rating: 4.2 },
     { name: "مكواة شعر", price: "285,000 ل.س", img: "/products/hair-iron.jpg", rating: 4.1 },
-    { name: "كاميرا رقمية", price: "1,850,000 ل.س", img: "/products/camera.jpg", rating: 4.6 },
-    { name: "مصباح LED", price: "165,000 ل.س", img: "/products/led-lamp.jpg", rating: 4.0 },
-    { name: "كتاب طبخ", price: "95,000 ل.س", img: "/products/cookbook.jpg", rating: 4.5 },
-    { name: "لعبة تركيب", price: "320,000 ل.س", img: "/products/puzzle.jpg", rating: 4.3 },
-    { name: "قلادة ذهبية", price: "1,250,000 ل.س", img: "/products/necklace.jpg", rating: 4.8 }
+    { name: "كاميرا رقمية", price: "1,850,000 ل.س", img: "/products/camera.jpg", rating: 4.6 }
   ];
+
   const allProducts = [
     ...mobileProducts,
     ...mobileRandomProducts,
@@ -432,12 +462,141 @@ const [errorRandom, setErrorRandom] = useState<string | null>(null);
     ...desktopRandomProducts.map(p => ({...p, id: Math.random()}))
   ];
 
+  // Search Results Component
+  const SearchResults = () => (
+    <div className="absolute z-50 mt-1 w-full bg-white shadow-lg rounded-lg max-h-96 overflow-y-auto border border-gray-200">
+      {searchLoading ? (
+        <div className="p-4 text-center">
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-orange-600 mx-auto"></div>
+          <p className="text-gray-500 mt-2">جاري البحث...</p>
+        </div>
+      ) : searchError ? (
+        <div className="p-4 text-center text-red-500">
+          <p className="text-sm">{searchError}</p>
+          <p className="text-xs text-gray-500 mt-1">سيتم عرض نتائج البحث المحلية فقط</p>
+        </div>
+      ) : displaySearchResults.length > 0 ? (
+        <>
+          <div className="p-3 bg-gray-50 border-b">
+            <p className="text-sm text-gray-600">
+              تم العثور على {displaySearchResults.length} منتج
+            </p>
+          </div>
+          {displaySearchResults.map((product, index) => (
+            <Link 
+              key={product.id || index} 
+              href={`/product/${product.id}`}
+              className="flex items-center p-3 hover:bg-gray-50 border-b border-gray-100 transition-colors"
+              onClick={() => {
+                setIsSearching(false);
+                setSearchQuery('');
+              }}
+            >
+              <div className="w-12 h-12 flex-shrink-0 mr-3 bg-gray-100 rounded-lg flex items-center justify-center">
+                <Image
+                  src={getProductImage(product)}
+                  alt={product.name}
+                  width={48}
+                  height={48}
+                  className="object-contain rounded-lg"
+                  onError={(e) => {
+                    e.currentTarget.src = '/placeholder-product.jpg';
+                  }}
+                />
+              </div>
+              <div className="flex-grow">
+                <h4 className="text-sm font-medium text-gray-800 line-clamp-1">{product.name}</h4>
+                <div className="flex items-center justify-between mt-1">
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm text-orange-600 font-bold">{getProductPrice(product)}</p>
+                    {getProductOriginalPrice(product) && (
+                      <p className="text-xs text-gray-400 line-through">{getProductOriginalPrice(product)}</p>
+                    )}
+                  </div>
+                  {getProductDiscount(product) > 0 && (
+                    <span className="text-xs bg-orange-100 text-orange-600 px-2 py-1 rounded">
+                      خصم {getProductDiscount(product)}%
+                    </span>
+                  )}
+                </div>
+              </div>
+            </Link>
+          ))}
+        </>
+      ) : (
+        <div className="p-4 text-center text-gray-500">
+          <svg className="w-12 h-12 mx-auto text-gray-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <p>لا توجد نتائج لبحثك</p>
+          <p className="text-sm mt-1">حاول استخدام كلمات بحث مختلفة</p>
+        </div>
+      )}
+    </div>
+  );
+
+  // Mobile Search Results Component
+  const MobileSearchResults = () => (
+    <div className="absolute top-full left-0 right-0 bg-white shadow-lg z-50 max-h-96 overflow-y-auto border-t border-gray-200">
+      {searchLoading ? (
+        <div className="p-4 text-center">
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-orange-600 mx-auto"></div>
+          <p className="text-gray-500 mt-2">جاري البحث...</p>
+        </div>
+      ) : searchError ? (
+        <div className="p-4 text-center text-red-500">
+          <p className="text-sm">{searchError}</p>
+        </div>
+      ) : displaySearchResults.length > 0 ? (
+        displaySearchResults.map((product, index) => (
+          <Link 
+            key={product.id || index} 
+            href={`/product/${product.id}`}
+            className="flex items-center p-3 hover:bg-gray-50 border-b border-gray-100"
+            onClick={() => {
+              setIsSearching(false);
+              setSearchQuery('');
+            }}
+          >
+            <div className="w-12 h-12 flex-shrink-0 mr-3 bg-gray-100 rounded-lg flex items-center justify-center">
+              <Image
+                src={getProductImage(product)}
+                alt={product.name}
+                width={48}
+                height={48}
+                className="object-contain rounded-lg"
+                onError={(e) => {
+                  e.currentTarget.src = '/placeholder-product.jpg';
+                }}
+              />
+            </div>
+            <div className="flex-grow">
+              <h4 className="text-sm font-medium text-gray-800 line-clamp-1">{product.name}</h4>
+              <div className="flex items-center justify-between mt-1">
+                <p className="text-sm text-orange-600 font-bold">{getProductPrice(product)}</p>
+                {getProductDiscount(product) > 0 && (
+                  <span className="text-xs bg-orange-100 text-orange-600 px-1 rounded">
+                    خصم {getProductDiscount(product)}%
+                  </span>
+                )}
+              </div>
+            </div>
+          </Link>
+        ))
+      ) : (
+        <div className="p-4 text-center text-gray-500">
+          لا توجد نتائج لبحثك
+        </div>
+      )}
+    </div>
+  );
+
   // عرض نسخة الموبايل
   if (isMobile) {
     return (
       <>
         <Head>
-          <title dir="rtl">Ali Market - منصة تسوق إلكترونية</title>
+          <title dir="rtl">Alia Market - منصة تسوق إلكترونية</title>
           <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
           <meta name="description" content="اكتشف أحدث المنتجات من أفضل البائعين ضمن فئات متنوعة" />
         </Head>
@@ -487,14 +646,15 @@ const [errorRandom, setErrorRandom] = useState<string | null>(null);
               </svg>
             </button>
             
-            <div className="flex-1 mx-4">
+            <div className="flex-1 mx-4 relative">
               <input
                 type="text"
-                placeholder="ابحث..."
-                className="w-full px-3 py-1 rounded-lg text-black text-sm"
+                placeholder="ابحث عن منتج..."
+                className="w-full px-3 py-2 rounded-lg text-black text-sm border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500"
                 value={searchQuery}
-                onChange={(e) => handleSearch(e.target.value)}
+                onChange={(e) => setSearchQuery(e.target.value)}
               />
+              {isSearching && <MobileSearchResults />}
             </div>
             
             <Link href="/cart" className="text-white relative">
@@ -504,43 +664,6 @@ const [errorRandom, setErrorRandom] = useState<string | null>(null);
               <span className="absolute -top-2 -right-2 bg-orange-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold">{cartCount}</span>
             </Link>
           </div>
-
-          {/* Mobile search results */}
-          {isSearching && isMobile && (
-            <div className="absolute top-full left-0 right-0 bg-white shadow-lg z-50 max-h-96 overflow-y-auto">
-              {searchResults.length > 0 ? (
-                searchResults.map(product => (
-                  <Link 
-                    key={product.id} 
-                    href={`/product/${product.id}`}
-                    className="flex items-center p-3 hover:bg-gray-100 border-b border-gray-100"
-                    onClick={() => {
-                      setIsSearching(false);
-                      setSearchQuery('');
-                    }}
-                  >
-                    <div className="w-12 h-12 flex-shrink-0 mr-3">
-                      <Image
-                        src={product.img}
-                        alt={product.name}
-                        width={48}
-                        height={48}
-                        className="object-contain"
-                      />
-                    </div>
-                    <div className="flex-grow">
-                      <h4 className="text-sm font-medium text-gray-800">{product.name}</h4>
-                      <p className="text-sm text-orange-600 font-bold">{product.price}</p>
-                    </div>
-                  </Link>
-                ))
-              ) : (
-                <div className="p-4 text-center text-gray-500">
-                  لا توجد نتائج لبحثك
-                </div>
-              )}
-            </div>
-          )}
 
           {/* قائمة الجوال */}
           {menuOpen && (
@@ -800,7 +923,7 @@ const [errorRandom, setErrorRandom] = useState<string | null>(null);
                 placeholder="ابحث عن منتجك المفضل"
                 className="w-full pr-10 pl-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-black"
                 value={searchQuery}
-                onChange={(e) => handleSearch(e.target.value)}
+                onChange={(e) => setSearchQuery(e.target.value)}
               />
               <button className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-orange-600">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -809,41 +932,7 @@ const [errorRandom, setErrorRandom] = useState<string | null>(null);
               </button>
               
               {/* Search results dropdown */}
-              {isSearching && (
-                <div className="absolute z-50 mt-1 w-full bg-white shadow-lg rounded-lg max-h-96 overflow-y-auto">
-                  {searchResults.length > 0 ? (
-                    searchResults.map(product => (
-                      <Link 
-                        key={product.id} 
-                        href={`/product/${product.id}`}
-                        className="flex items-center p-3 hover:bg-gray-100 border-b border-gray-100"
-                        onClick={() => {
-                          setIsSearching(false);
-                          setSearchQuery('');
-                        }}
-                      >
-                        <div className="w-12 h-12 flex-shrink-0 mr-3">
-                          <Image
-                            src={product.img}
-                            alt={product.name}
-                            width={48}
-                            height={48}
-                            className="object-contain"
-                          />
-                        </div>
-                        <div className="flex-grow">
-                          <h4 className="text-sm font-medium text-gray-800">{product.name}</h4>
-                          <p className="text-sm text-orange-600 font-bold">{product.price}</p>
-                        </div>
-                      </Link>
-                    ))
-                  ) : (
-                    <div className="p-4 text-center text-gray-500">
-                      لا توجد نتائج لبحثك
-                    </div>
-                  )}
-                </div>
-              )}
+              {isSearching && <SearchResults />}
             </div>
           </div>
           
@@ -854,11 +943,11 @@ const [errorRandom, setErrorRandom] = useState<string | null>(null);
             <Link href="/offers" className="text-white hover:text-orange-300 font-medium transition">العروض</Link>
             <Link href="/account" className="text-white hover:text-orange-300 font-medium transition">حسابي</Link>
             <Link href="/favorites" className="flex items-center gap-2">
-  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-  </svg>
-  المفضلة
-</Link>
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+              </svg>
+              المفضلة
+            </Link>
           </nav>
           
           {/* سلة التسوق */}
@@ -987,488 +1076,459 @@ const [errorRandom, setErrorRandom] = useState<string | null>(null);
         </section>
 
         {/* قسم الفئات */}
-
-
-<section dir="rtl" id="categories" className="py-20 px-6 bg-white">
-  <div className="max-w-7xl mx-auto">
-    <div className="text-center mb-14">
-      <h2 className="text-3xl font-bold mb-3 text-blue-900">تصفح حسب الفئة</h2>
-      <p className="text-gray-500 max-w-2xl mx-auto">اكتشف آلاف المنتجات من مختلف الفئات</p>
-    </div>
-
-    {loadingCategories ? (
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {[...Array(8)].map((_, index) => (
-          <div key={index} className="bg-white rounded-2xl shadow-md overflow-hidden animate-pulse">
-            <div className="h-48 bg-gray-200"></div>
-            <div className="p-5">
-              <div className="h-6 bg-gray-200 rounded w-3/4 mb-2"></div>
-              <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+        <section dir="rtl" id="categories" className="py-20 px-6 bg-white">
+          <div className="max-w-7xl mx-auto">
+            <div className="text-center mb-14">
+              <h2 className="text-3xl font-bold mb-3 text-blue-900">تصفح حسب الفئة</h2>
+              <p className="text-gray-500 max-w-2xl mx-auto">اكتشف آلاف المنتجات من مختلف الفئات</p>
             </div>
-          </div>
-        ))}
-      </div>
-    ) : errorCategories ? (
-      <div className="text-center py-8">
-        <p className="text-red-500 mb-4">{errorCategories}</p>
-        <button
-          onClick={() => window.location.reload()}
-          className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg"
-        >
-          حاول مرة أخرى
-        </button>
-      </div>
-    ) : (
-      <>
-        {/* Categories Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mb-12">
-          {categories.slice(0, 8).map((category, index) => (
-            <Link
-              key={category.id}
-              href={`/sub-categories/${category.id}`}
-              className="group bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden cursor-pointer transform hover:-translate-y-2"
-              style={{
-                animation: `slideIn 0.5s ease-out ${index * 0.1}s both`
-              }}
-            >
-              <div className="relative h-48 overflow-hidden">
-                <Image
-                  src={category.image || '/placeholder-category.jpg'}
-                  alt={category.name}
-                  width={300}
-                  height={200}
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                  onError={(e) => {
-                    e.currentTarget.src = '/placeholder-category.jpg';
-                  }}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-                
-                {/* Hover Effect */}
-                <div className="absolute inset-0 bg-orange-500/90 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                  <div className="text-center text-white">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                    <span className="font-medium text-sm">تصفح القسم</span>
+
+            {loadingCategories ? (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                {[...Array(8)].map((_, index) => (
+                  <div key={index} className="bg-white rounded-2xl shadow-md overflow-hidden animate-pulse">
+                    <div className="h-48 bg-gray-200"></div>
+                    <div className="p-5">
+                      <div className="h-6 bg-gray-200 rounded w-3/4 mb-2"></div>
+                      <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                    </div>
                   </div>
-                </div>
+                ))}
               </div>
-              <div className="p-5">
-                <h3 className="font-bold text-lg text-gray-800 mb-1">{category.name}</h3>
-                <p className="text-gray-500 text-sm">{category.products_count} منتج</p>
-              </div>
-            </Link>
-          ))}
-        </div>
-
-        {/* View All Categories Button */}
-        {categories.length > 8 && (
-          <div className="text-center">
-            <Link
-              href="/categories"
-              className="inline-flex items-center gap-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold px-8 py-4 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-              </svg>
-              عرض جميع الفئات
-              <span className="bg-white/20 px-2 py-1 rounded-lg text-sm">
-                ({categories.length})
-              </span>
-            </Link>
-            
-            {/* Additional Info */}
-            <p className="text-gray-500 mt-4 text-sm">
-              عرض {Math.min(8, categories.length)} من أصل {categories.length} فئة
-            </p>
-          </div>
-        )}
-      </>
-    )}
-  </div>
-
-  <style jsx global>{`
-    @keyframes slideIn {
-      from {
-        opacity: 0;
-        transform: translateY(20px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-  `}</style>
-</section>
-
-        {/* قسم المنتجات الأكثر مبيعاً */}
-        
-
-<section dir="rtl" id="products" className="py-20 px-6 bg-gray-50">
-  <div className="max-w-7xl mx-auto">
-    <div className="text-center mb-14">
-      <h2 className="text-3xl font-bold mb-3 text-blue-900">المنتجات الحديثة</h2>
-      <p className="text-gray-500 max-w-2xl mx-auto">المنتجات المضافة مؤخراً</p>
-    </div>
-
-    {loadinglastet ? (
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-        {[...Array(4)].map((_, index) => (
-          <div key={index} className="bg-white rounded-xl shadow-md overflow-hidden animate-pulse">
-            <div className="h-60 bg-gray-200"></div>
-            <div className="p-5">
-              <div className="h-6 bg-gray-200 rounded w-3/4 mb-2"></div>
-              <div className="h-4 bg-gray-200 rounded w-1/2 mb-3"></div>
-              <div className="h-8 bg-gray-200 rounded"></div>
-            </div>
-          </div>
-        ))}
-      </div>
-    ) : errorlastest ? (
-      <div className="text-center py-8">
-        <p className="text-red-500 mb-4">{errorlastest}</p>
-        <button
-          onClick={() => window.location.reload()}
-          className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg"
-        >
-          حاول مرة أخرى
-        </button>
-      </div>
-    ) : (
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-        {latestProducts.map((product) => (
-  <div key={product.id} className="group bg-white rounded-xl shadow-md hover:shadow-xl transition overflow-hidden border border-gray-100">
-    {/* REPLACE THIS LINK */}
-<Link href={`/product/${product.id}`} className="block">      <div className="relative h-60 overflow-hidden">
-        <Image
-          src={product.image || '/placeholder-product.jpg'}
-          alt={product.name}
-          width={300}
-          height={300}
-          className="w-full h-full object-contain p-4 transition-transform duration-300 group-hover:scale-105"
-          onError={(e) => {
-            e.currentTarget.src = '/placeholder-product.jpg';
-          }}
-        />
-        {product.discount_percentage > 0 && (
-          <span className="absolute top-3 left-3 bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded">
-            خصم {product.discount_percentage}%
-          </span>
-        )}
-        <button 
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            toggleFavorite({
-              id: product.id,
-              name: product.name,
-              price: product.price_after_discount,
-              img: product.image,
-              oldPrice: product.discount_percentage > 0 ? product.original_price : undefined,
-            });
-          }}
-          className={`absolute top-3 right-3 bg-white/80 hover:bg-white rounded-full w-8 h-8 flex items-center justify-center shadow-sm transition ${
-            isFavorite(product.id) ? 'text-red-500' : 'text-gray-600'
-          }`}
-        >
-          <svg 
-            xmlns="http://www.w3.org/2000/svg" 
-            className="h-5 w-5" 
-            fill={isFavorite(product.id) ? "currentColor" : "none"} 
-            viewBox="0 0 24 24" 
-            stroke="currentColor"
-          >
-            <path 
-              strokeLinecap="round" 
-              strokeLinejoin="round" 
-              strokeWidth={2} 
-              d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" 
-            />
-          </svg>
-        </button>
-      </div>
-      <div className="p-5">
-        <h3 className="font-bold text-lg text-gray-800 mb-2 line-clamp-2 h-14">{product.name}</h3>
-        <div className="flex items-center mb-3">
-          {[...Array(5)].map((_, i) => (
-            <svg 
-              key={i}
-              xmlns="http://www.w3.org/2000/svg" 
-              className={`h-4 w-4 ${i < Math.floor(product.total_rating) ? 'text-yellow-400' : 'text-gray-300'}`} 
-              viewBox="0 0 20 20" 
-              fill="currentColor"
-            >
-              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-            </svg>
-          ))}
-          <span className="text-sm text-gray-500 mr-2">({product.total_rating})</span>
-        </div>
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-xl font-bold text-orange-600">
-              {product.price_after_discount} ل.س
-            </p>
-            {product.discount_percentage > 0 && (
-              <p className="text-sm text-gray-400 line-through">
-                {product.original_price} ل.س
-              </p>
-            )}
-          </div>
-          <button 
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              handleAddToCart({
-                id: product.id,
-                name: product.name,
-                price: product.price_after_discount,
-                img: product.image,
-                quantity: 1,
-                oldPrice: product.discount_percentage > 0 ? product.original_price : undefined,
-              });
-            }}
-            className="bg-orange-500 hover:bg-orange-600 text-white p-2 rounded-lg transition shadow hover:shadow-md"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-          </button>
-        </div>
-      </div>
-    </Link>
-  </div>
-))}
-      </div>
-    )}
-  </div>
-</section>
-
-<section dir="rtl" id="products" className="py-20 px-6 bg-gray-50">
-  <div className="max-w-7xl mx-auto">
-    <div className="text-center mb-14">
-      <h2 className="text-3xl font-bold mb-3 text-blue-900">الأكثر تقييماً</h2>
-      <p className="text-gray-500 max-w-2xl mx-auto">المنتجات الأكثر تقييماً من عملائنا</p>
-    </div>
-
-    {loadingBestselling ? (
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-        {[...Array(4)].map((_, index) => (
-          <div key={index} className="bg-white rounded-xl shadow-md overflow-hidden animate-pulse">
-            <div className="h-60 bg-gray-200"></div>
-            <div className="p-5">
-              <div className="h-6 bg-gray-200 rounded w-3/4 mb-2"></div>
-              <div className="h-4 bg-gray-200 rounded w-1/2 mb-3"></div>
-              <div className="h-8 bg-gray-200 rounded"></div>
-            </div>
-          </div>
-        ))}
-      </div>
-    ) : errorBestselling ? (
-      <div className="text-center py-8">
-        <p className="text-red-500 mb-4">{errorBestselling}</p>
-        <button
-          onClick={() => window.location.reload()}
-          className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg"
-        >
-          حاول مرة أخرى
-        </button>
-      </div>
-    ) : (
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-        {bestsellingProducts.map((product) => (
-          <div key={product.id} className="group bg-white rounded-xl shadow-md hover:shadow-xl transition overflow-hidden border border-gray-100">
-            <Link href={`/product/${product.id}`} className="block">
-              <div className="relative h-60 overflow-hidden">
-                <Image
-                  src={product.image || '/placeholder-product.jpg'}
-                  alt={product.name}
-                  width={300}
-                  height={300}
-                  className="w-full h-full object-contain p-4 transition-transform duration-300 group-hover:scale-105"
-                  onError={(e) => {
-                    e.currentTarget.src = '/placeholder-product.jpg';
-                  }}
-                />
-                {product.discount_percentage > 0 && (
-                  <span className="absolute top-3 left-3 bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded">
-                    خصم {product.discount_percentage}%
-                  </span>
-                )}
-                
-                <button 
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    toggleFavorite({
-                      id: product.id,
-                      name: product.name,
-                      price: product.price_after_discount,
-                      img: product.image,
-                      oldPrice: product.discount_percentage > 0 ? product.original_price : undefined,
-                    });
-                  }}
-                  className={`absolute top-3 right-3 bg-white/80 hover:bg-white rounded-full w-8 h-8 flex items-center justify-center shadow-sm transition ${
-                    isFavorite(product.id) ? 'text-red-500' : 'text-gray-600'
-                  }`}
+            ) : errorCategories ? (
+              <div className="text-center py-8">
+                <p className="text-red-500 mb-4">{errorCategories}</p>
+                <button
+                  onClick={() => window.location.reload()}
+                  className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg"
                 >
-                  <svg 
-                    xmlns="http://www.w3.org/2000/svg" 
-                    className="h-5 w-5" 
-                    fill={isFavorite(product.id) ? "currentColor" : "none"} 
-                    viewBox="0 0 24 24" 
-                    stroke="currentColor"
-                  >
-                    <path 
-                      strokeLinecap="round" 
-                      strokeLinejoin="round" 
-                      strokeWidth={2} 
-                      d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" 
-                    />
-                  </svg>
+                  حاول مرة أخرى
                 </button>
               </div>
-              <div className="p-5">
-                <h3 className="font-bold text-lg text-gray-800 mb-2 line-clamp-2 h-14">{product.name}</h3>
-                <div className="flex items-center mb-3">
-                  {[...Array(5)].map((_, i) => (
-                    <svg 
-                      key={i}
-                      xmlns="http://www.w3.org/2000/svg" 
-                      className={`h-4 w-4 ${i < Math.floor(product.total_rating) ? 'text-yellow-400' : 'text-gray-300'}`} 
-                      viewBox="0 0 20 20" 
-                      fill="currentColor"
+            ) : (
+              <>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mb-12">
+                  {categories.slice(0, 8).map((category, index) => (
+                    <Link
+                      key={category.id}
+                      href={`/sub-categories/${category.id}`}
+                      className="group bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden cursor-pointer transform hover:-translate-y-2"
                     >
-                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                    </svg>
+                      <div className="relative h-48 overflow-hidden">
+                        <Image
+                          src={category.image || '/placeholder-category.jpg'}
+                          alt={category.name}
+                          width={300}
+                          height={200}
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                          onError={(e) => {
+                            e.currentTarget.src = '/placeholder-category.jpg';
+                          }}
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                        <div className="absolute inset-0 bg-orange-500/90 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                          <div className="text-center text-white">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                            </svg>
+                            <span className="font-medium text-sm">تصفح القسم</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="p-5">
+                        <h3 className="font-bold text-lg text-gray-800 mb-1">{category.name}</h3>
+                        <p className="text-gray-500 text-sm">{category.products_count} منتج</p>
+                      </div>
+                    </Link>
                   ))}
-                  <span className="text-sm text-gray-500 mr-2">({product.total_rating})</span>
                 </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xl font-bold text-orange-600">
-                      {product.price_after_discount} ل.س
-                    </p>
-                    {product.discount_percentage > 0 && (
-                      <p className="text-sm text-gray-400 line-through">
-                        {product.original_price} ل.س
-                      </p>
-                    )}
+
+                {categories.length > 8 && (
+                  <div className="text-center">
+                    <Link
+                      href="/categories"
+                      className="inline-flex items-center gap-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold px-8 py-4 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                      </svg>
+                      عرض جميع الفئات
+                      <span className="bg-white/20 px-2 py-1 rounded-lg text-sm">
+                        ({categories.length})
+                      </span>
+                    </Link>
                   </div>
-                  <button 
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      handleAddToCart({
-                        id: product.id,
-                        name: product.name,
-                        price: product.price_after_discount,
-                        img: product.image,
-                        quantity: 1,
-                        oldPrice: product.discount_percentage > 0 ? product.original_price : undefined,
-                      });
-                    }}
-                    className="bg-orange-500 hover:bg-orange-600 text-white p-2 rounded-lg transition shadow hover:shadow-md"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                    </svg>
-                  </button>
-                </div>
+                )}
+              </>
+            )}
+          </div>
+        </section>
+
+        {/* قسم المنتجات الحديثة */}
+        <section dir="rtl" id="products" className="py-20 px-6 bg-gray-50">
+          <div className="max-w-7xl mx-auto">
+            <div className="text-center mb-14">
+              <h2 className="text-3xl font-bold mb-3 text-blue-900">المنتجات الحديثة</h2>
+              <p className="text-gray-500 max-w-2xl mx-auto">المنتجات المضافة مؤخراً</p>
+            </div>
+
+            {loadinglastet ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+                {[...Array(4)].map((_, index) => (
+                  <div key={index} className="bg-white rounded-xl shadow-md overflow-hidden animate-pulse">
+                    <div className="h-60 bg-gray-200"></div>
+                    <div className="p-5">
+                      <div className="h-6 bg-gray-200 rounded w-3/4 mb-2"></div>
+                      <div className="h-4 bg-gray-200 rounded w-1/2 mb-3"></div>
+                      <div className="h-8 bg-gray-200 rounded"></div>
+                    </div>
+                  </div>
+                ))}
               </div>
-            </Link>
+            ) : errorlastest ? (
+              <div className="text-center py-8">
+                <p className="text-red-500 mb-4">{errorlastest}</p>
+                <button
+                  onClick={() => window.location.reload()}
+                  className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg"
+                >
+                  حاول مرة أخرى
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+                {latestProducts.map((product) => (
+                  <div key={product.id} className="group bg-white rounded-xl shadow-md hover:shadow-xl transition overflow-hidden border border-gray-100">
+                    <Link href={`/product/${product.id}`} className="block">
+                      <div className="relative h-60 overflow-hidden">
+                        <Image
+                          src={product.image || '/placeholder-product.jpg'}
+                          alt={product.name}
+                          width={300}
+                          height={300}
+                          className="w-full h-full object-contain p-4 transition-transform duration-300 group-hover:scale-105"
+                          onError={(e) => {
+                            e.currentTarget.src = '/placeholder-product.jpg';
+                          }}
+                        />
+                        {product.discount_percentage > 0 && (
+                          <span className="absolute top-3 left-3 bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded">
+                            خصم {product.discount_percentage}%
+                          </span>
+                        )}
+                        <button 
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            toggleFavorite({
+                              id: product.id,
+                              name: product.name,
+                              price: product.price_after_discount,
+                              img: product.image,
+                              oldPrice: product.discount_percentage > 0 ? product.original_price : undefined,
+                            });
+                          }}
+                          className={`absolute top-3 right-3 bg-white/80 hover:bg-white rounded-full w-8 h-8 flex items-center justify-center shadow-sm transition ${
+                            isFavorite(product.id) ? 'text-red-500' : 'text-gray-600'
+                          }`}
+                        >
+                          <svg 
+                            xmlns="http://www.w3.org/2000/svg" 
+                            className="h-5 w-5" 
+                            fill={isFavorite(product.id) ? "currentColor" : "none"} 
+                            viewBox="0 0 24 24" 
+                            stroke="currentColor"
+                          >
+                            <path 
+                              strokeLinecap="round" 
+                              strokeLinejoin="round" 
+                              strokeWidth={2} 
+                              d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" 
+                            />
+                          </svg>
+                        </button>
+                      </div>
+                      <div className="p-5">
+                        <h3 className="font-bold text-lg text-gray-800 mb-2 line-clamp-2 h-14">{product.name}</h3>
+                        <div className="flex items-center mb-3">
+                          {[...Array(5)].map((_, i) => (
+                            <svg 
+                              key={i}
+                              xmlns="http://www.w3.org/2000/svg" 
+                              className={`h-4 w-4 ${i < Math.floor(product.total_rating) ? 'text-yellow-400' : 'text-gray-300'}`} 
+                              viewBox="0 0 20 20" 
+                              fill="currentColor"
+                            >
+                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                            </svg>
+                          ))}
+                          <span className="text-sm text-gray-500 mr-2">({product.total_rating})</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-xl font-bold text-orange-600">
+                              {product.price_after_discount} ل.س
+                            </p>
+                            {product.discount_percentage > 0 && (
+                              <p className="text-sm text-gray-400 line-through">
+                                {product.original_price} ل.س
+                              </p>
+                            )}
+                          </div>
+                          <button 
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleAddToCart({
+                                id: product.id,
+                                name: product.name,
+                                price: product.price_after_discount,
+                                img: product.image,
+                                quantity: 1,
+                                oldPrice: product.discount_percentage > 0 ? product.original_price : undefined,
+                              });
+                            }}
+                            className="bg-orange-500 hover:bg-orange-600 text-white p-2 rounded-lg transition shadow hover:shadow-md"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    </Link>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-        ))}
-      </div>
-    )}
-  </div>
-</section>
+        </section>
 
-    {/* قسم الدعوة للعمل */}
-    <section className="py-20 px-6 text-center bg-blue-900 text-white relative overflow-hidden">
-      <div className="absolute inset-0 opacity-10">
-        <div className="absolute top-0 left-0 w-full h-full bg-[url('/pattern-dark.svg')] bg-repeat"></div>
-      </div>
-      <div className="max-w-4xl mx-auto relative z-10">
-        <h2 dir="rtl" className="text-3xl font-bold mb-6">جاهز لبدء رحلتك مع Alia Market؟</h2>
-        <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
-          سجل الآن واحصل على خصم 10% على أول عملية شراء
-        </p>
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <a
-            href="/signup"
-            className="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-8 py-4 rounded-xl transition shadow-lg hover:shadow-xl"
-          >
-            إنشاء حساب جديد
-          </a>
-          <a
-            href="/login"
-            className="bg-transparent border-2 border-white/30 hover:border-white/50 text-white font-semibold px-8 py-4 rounded-xl transition"
-          >
-            تسجيل الدخول
-          </a>
-        </div>
-      </div>
-    </section>
+        {/* قسم المنتجات الأكثر تقييماً */}
+        <section dir="rtl" id="products" className="py-20 px-6 bg-gray-50">
+          <div className="max-w-7xl mx-auto">
+            <div className="text-center mb-14">
+              <h2 className="text-3xl font-bold mb-3 text-blue-900">الأكثر تقييماً</h2>
+              <p className="text-gray-500 max-w-2xl mx-auto">المنتجات الأكثر تقييماً من عملائنا</p>
+            </div>
 
-    {/* الفوتر */}
-    <footer className="bg-blue-900 text-white py-12 px-6">
-      <div dir="rtl" className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
-        <div>
-          <h3 className="text-xl font-bold mb-4">Alia Market</h3>
-          <p className="text-blue-200">
-            منصة رائدة في التجارة الإلكترونية تقدم أفضل الحلول للبائعين والمشترين
-          </p>
-        </div>
-        <div>
-          <h4 className="font-bold mb-4">روابط سريعة</h4>
-          <ul className="space-y-2 text-blue-200">
-            <li><a href="/" className="hover:text-white transition">الرئيسية</a></li>
-            <li><a href="/products" className="hover:text-white transition">المنتجات</a></li>
-            <li><a href="/categories" className="hover:text-white transition">الفئات</a></li>
-            <li><a href="/about" className="hover:text-white transition">عن المنصة</a></li>
-          </ul>
-        </div>
-        <div>
-          <h4 className="font-bold mb-4">خدمة العملاء</h4>
-          <ul className="space-y-2 text-blue-200">
-            <li><a href="/contact" className="hover:text-white transition">اتصل بنا</a></li>
-            <li><a href="/faq" className="hover:text-white transition">الأسئلة الشائعة</a></li>
-            <li><a href="/returns" className="hover:text-white transition">سياسة الإرجاع</a></li>
-            <li><a href="/privacy" className="hover:text-white transition">الخصوصية</a></li>
-          </ul>
-        </div>
-        <div>
-          <h4 className="font-bold mb-4">تواصل معنا</h4>
-          <div className="flex gap-4 mb-4">
-            <a href="#" className="bg-blue-800 hover:bg-orange-500 w-10 h-10 rounded-full flex items-center justify-center transition">
-              <span className="sr-only">فيسبوك</span>
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z"/>
-              </svg>
-            </a>
-            <a href="#" className="bg-blue-800 hover:bg-orange-500 w-10 h-10 rounded-full flex items-center justify-center transition">
-              <span className="sr-only">إنستغرام</span>
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/>
-              </svg>
-            </a>
-            <a href="#" className="bg-blue-800 hover:bg-orange-500 w-10 h-10 rounded-full flex items-center justify-center transition">
-              <span className="sr-only">تويتر</span>
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84"/>
-              </svg>
-            </a>
+            {loadingBestselling ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+                {[...Array(4)].map((_, index) => (
+                  <div key={index} className="bg-white rounded-xl shadow-md overflow-hidden animate-pulse">
+                    <div className="h-60 bg-gray-200"></div>
+                    <div className="p-5">
+                      <div className="h-6 bg-gray-200 rounded w-3/4 mb-2"></div>
+                      <div className="h-4 bg-gray-200 rounded w-1/2 mb-3"></div>
+                      <div className="h-8 bg-gray-200 rounded"></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : errorBestselling ? (
+              <div className="text-center py-8">
+                <p className="text-red-500 mb-4">{errorBestselling}</p>
+                <button
+                  onClick={() => window.location.reload()}
+                  className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg"
+                >
+                  حاول مرة أخرى
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+                {bestsellingProducts.map((product) => (
+                  <div key={product.id} className="group bg-white rounded-xl shadow-md hover:shadow-xl transition overflow-hidden border border-gray-100">
+                    <Link href={`/product/${product.id}`} className="block">
+                      <div className="relative h-60 overflow-hidden">
+                        <Image
+                          src={product.image || '/placeholder-product.jpg'}
+                          alt={product.name}
+                          width={300}
+                          height={300}
+                          className="w-full h-full object-contain p-4 transition-transform duration-300 group-hover:scale-105"
+                          onError={(e) => {
+                            e.currentTarget.src = '/placeholder-product.jpg';
+                          }}
+                        />
+                        {product.discount_percentage > 0 && (
+                          <span className="absolute top-3 left-3 bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded">
+                            خصم {product.discount_percentage}%
+                          </span>
+                        )}
+                        <button 
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            toggleFavorite({
+                              id: product.id,
+                              name: product.name,
+                              price: product.price_after_discount,
+                              img: product.image,
+                              oldPrice: product.discount_percentage > 0 ? product.original_price : undefined,
+                            });
+                          }}
+                          className={`absolute top-3 right-3 bg-white/80 hover:bg-white rounded-full w-8 h-8 flex items-center justify-center shadow-sm transition ${
+                            isFavorite(product.id) ? 'text-red-500' : 'text-gray-600'
+                          }`}
+                        >
+                          <svg 
+                            xmlns="http://www.w3.org/2000/svg" 
+                            className="h-5 w-5" 
+                            fill={isFavorite(product.id) ? "currentColor" : "none"} 
+                            viewBox="0 0 24 24" 
+                            stroke="currentColor"
+                          >
+                            <path 
+                              strokeLinecap="round" 
+                              strokeLinejoin="round" 
+                              strokeWidth={2} 
+                              d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" 
+                            />
+                          </svg>
+                        </button>
+                      </div>
+                      <div className="p-5">
+                        <h3 className="font-bold text-lg text-gray-800 mb-2 line-clamp-2 h-14">{product.name}</h3>
+                        <div className="flex items-center mb-3">
+                          {[...Array(5)].map((_, i) => (
+                            <svg 
+                              key={i}
+                              xmlns="http://www.w3.org/2000/svg" 
+                              className={`h-4 w-4 ${i < Math.floor(product.total_rating) ? 'text-yellow-400' : 'text-gray-300'}`} 
+                              viewBox="0 0 20 20" 
+                              fill="currentColor"
+                            >
+                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                            </svg>
+                          ))}
+                          <span className="text-sm text-gray-500 mr-2">({product.total_rating})</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-xl font-bold text-orange-600">
+                              {product.price_after_discount} ل.س
+                            </p>
+                            {product.discount_percentage > 0 && (
+                              <p className="text-sm text-gray-400 line-through">
+                                {product.original_price} ل.س
+                              </p>
+                            )}
+                          </div>
+                          <button 
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleAddToCart({
+                                id: product.id,
+                                name: product.name,
+                                price: product.price_after_discount,
+                                img: product.image,
+                                quantity: 1,
+                                oldPrice: product.discount_percentage > 0 ? product.original_price : undefined,
+                              });
+                            }}
+                            className="bg-orange-500 hover:bg-orange-600 text-white p-2 rounded-lg transition shadow hover:shadow-md"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    </Link>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-          <p dir="rtl" className="text-blue-200">البريد الإلكتروني: info@aliamarket.com</p>
-          <p dir="rtl" className="text-blue-200">الهاتف: <span dir="ltr">+963 123 456 789</span></p>
-        </div>
-      </div>
-      <div className="border-t border-blue-800 mt-12 pt-8 text-center text-blue-300">
-        <p dir="rtl">© {new Date().getFullYear()} Alia Market. جميع الحقوق محفوظة</p>
-      </div>
-    </footer>
-  </main>
-        
-</>);
-        }
+        </section>
+
+        {/* قسم الدعوة للعمل */}
+        <section className="py-20 px-6 text-center bg-blue-900 text-white relative overflow-hidden">
+          <div className="absolute inset-0 opacity-10">
+            <div className="absolute top-0 left-0 w-full h-full bg-[url('/pattern-dark.svg')] bg-repeat"></div>
+          </div>
+          <div className="max-w-4xl mx-auto relative z-10">
+            <h2 dir="rtl" className="text-3xl font-bold mb-6">جاهز لبدء رحلتك مع Alia Market؟</h2>
+            <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
+              سجل الآن واحصل على خصم 10% على أول عملية شراء
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <a
+                href="/signup"
+                className="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-8 py-4 rounded-xl transition shadow-lg hover:shadow-xl"
+              >
+                إنشاء حساب جديد
+              </a>
+              <a
+                href="/login"
+                className="bg-transparent border-2 border-white/30 hover:border-white/50 text-white font-semibold px-8 py-4 rounded-xl transition"
+              >
+                تسجيل الدخول
+              </a>
+            </div>
+          </div>
+        </section>
+
+        {/* الفوتر */}
+        <footer className="bg-blue-900 text-white py-12 px-6">
+          <div dir="rtl" className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div>
+              <h3 className="text-xl font-bold mb-4">Alia Market</h3>
+              <p className="text-blue-200">
+                منصة رائدة في التجارة الإلكترونية تقدم أفضل الحلول للبائعين والمشترين
+              </p>
+            </div>
+            <div>
+              <h4 className="font-bold mb-4">روابط سريعة</h4>
+              <ul className="space-y-2 text-blue-200">
+                <li><a href="/" className="hover:text-white transition">الرئيسية</a></li>
+                <li><a href="/products" className="hover:text-white transition">المنتجات</a></li>
+                <li><a href="/categories" className="hover:text-white transition">الفئات</a></li>
+                <li><a href="/about" className="hover:text-white transition">عن المنصة</a></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-bold mb-4">خدمة العملاء</h4>
+              <ul className="space-y-2 text-blue-200">
+                <li><a href="/contact" className="hover:text-white transition">اتصل بنا</a></li>
+                <li><a href="/faq" className="hover:text-white transition">الأسئلة الشائعة</a></li>
+                <li><a href="/returns" className="hover:text-white transition">سياسة الإرجاع</a></li>
+                <li><a href="/privacy" className="hover:text-white transition">الخصوصية</a></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-bold mb-4">تواصل معنا</h4>
+              <div className="flex gap-4 mb-4">
+                <a href="#" className="bg-blue-800 hover:bg-orange-500 w-10 h-10 rounded-full flex items-center justify-center transition">
+                  <span className="sr-only">فيسبوك</span>
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z"/>
+                  </svg>
+                </a>
+                <a href="#" className="bg-blue-800 hover:bg-orange-500 w-10 h-10 rounded-full flex items-center justify-center transition">
+                  <span className="sr-only">إنستغرام</span>
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/>
+                  </svg>
+                </a>
+                <a href="#" className="bg-blue-800 hover:bg-orange-500 w-10 h-10 rounded-full flex items-center justify-center transition">
+                  <span className="sr-only">تويتر</span>
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84"/>
+                  </svg>
+                </a>
+              </div>
+              <p dir="rtl" className="text-blue-200">البريد الإلكتروني: info@aliamarket.com</p>
+              <p dir="rtl" className="text-blue-200">الهاتف: <span dir="ltr">+963 123 456 789</span></p>
+            </div>
+          </div>
+          <div className="border-t border-blue-800 mt-12 pt-8 text-center text-blue-300">
+            <p dir="rtl">© {new Date().getFullYear()} Alia Market. جميع الحقوق محفوظة</p>
+          </div>
+        </footer>
+      </main>
+    </>
+  );
+}

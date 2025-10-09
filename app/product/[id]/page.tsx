@@ -33,11 +33,12 @@ export default function ProductDetailPage() {
   const router = useRouter();
   const productId = params.id as string;
   
-  const { addToCart, toggleFavorite, isFavorite } = useCart();
+  const { addToCart, toggleFavorite, isFavorite, cartCount } = useCart();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
+  const [showCartSuccess, setShowCartSuccess] = useState(false);
 
   // Fetch product details from API
   useEffect(() => {
@@ -82,7 +83,7 @@ export default function ProductDetailPage() {
   const formatPrice = (price: string): string => {
     try {
       const numericPrice = parseFloat(price);
-      return new Intl.NumberFormat('en-US').format(numericPrice) + ' ل.س';
+      return new Intl.NumberFormat('ar-SY').format(numericPrice) + ' ل.س';
     } catch {
       return price + ' ل.س';
     }
@@ -110,7 +111,16 @@ export default function ProductDetailPage() {
     };
 
     addToCart(cartItem);
-    alert(`تمت إضافة ${quantity} من ${product.name} إلى سلة التسوق`);
+    setShowCartSuccess(true);
+    
+    // Hide success message after 3 seconds
+    setTimeout(() => {
+      setShowCartSuccess(false);
+    }, 3000);
+  };
+
+  const viewCart = () => {
+    router.push('/cart');
   };
 
   if (loading) {
@@ -155,6 +165,28 @@ export default function ProductDetailPage() {
 
   return (
     <div dir="rtl" className="min-h-screen bg-gray-50">
+      {/* Success Message */}
+      {showCartSuccess && (
+        <div className="fixed top-4 left-4 right-4 z-50 animate-in slide-in-from-top duration-300">
+          <div className="bg-green-500 text-white p-4 rounded-lg shadow-lg mx-auto max-w-md flex items-center justify-between">
+            <div className="flex items-center">
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              <span>تمت الإضافة إلى السلة بنجاح!</span>
+            </div>
+            <button 
+              onClick={() => setShowCartSuccess(false)}
+              className="text-white hover:text-gray-200"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Navigation */}
       <nav className="bg-white shadow-sm py-4 px-6 border-b">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -168,24 +200,43 @@ export default function ProductDetailPage() {
             العودة
           </button>
           
-          <button 
-            onClick={() => toggleFavorite({
-              id: product.id_product,
-              name: product.name,
-              price: formatPrice(product.price_after_discount),
-              img: product.main_image,
-              oldPrice: hasDiscount ? formatPrice(product.original_price) : undefined,
-            })}
-            className={`p-2 rounded-full transition ${
-              isFavorite(product.id_product) 
-                ? "text-red-500 bg-red-50" 
-                : "text-gray-400 hover:text-red-500 hover:bg-red-50"
-            }`}
-          >
-            <svg className="w-6 h-6" fill={isFavorite(product.id_product) ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-            </svg>
-          </button>
+          <div className="flex items-center gap-4">
+            {/* View Cart Button in Header */}
+            <button 
+              onClick={viewCart}
+              className="relative flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition shadow-md hover:shadow-lg"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+              عرض السلة
+              {cartCount > 0 && (
+                <span className="absolute -top-2 -right-2 bg-orange-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold">
+                  {cartCount}
+                </span>
+              )}
+            </button>
+
+            {/* Favorite Button */}
+            <button 
+              onClick={() => toggleFavorite({
+                id: product.id_product,
+                name: product.name,
+                price: formatPrice(product.price_after_discount),
+                img: product.main_image,
+                oldPrice: hasDiscount ? formatPrice(product.original_price) : undefined,
+              })}
+              className={`p-2 rounded-full transition ${
+                isFavorite(product.id_product) 
+                  ? "text-red-500 bg-red-50" 
+                  : "text-gray-400 hover:text-red-500 hover:bg-red-50"
+              }`}
+            >
+              <svg className="w-6 h-6" fill={isFavorite(product.id_product) ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+              </svg>
+            </button>
+          </div>
         </div>
       </nav>
 
@@ -290,17 +341,17 @@ export default function ProductDetailPage() {
                 <div className="flex items-center gap-3 w-fit border border-gray-300 rounded-lg overflow-hidden mr-auto">
                   <button 
                     onClick={increaseQuantity}
-                    className="px-3 py-2 bg-black hover:bg-gray-200 transition disabled:opacity-50"
+                    className="px-3 py-2 bg-gray-100 hover:bg-gray-200 transition disabled:opacity-50"
                     disabled={quantity >= product.quantity}
                   >
                     <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                     </svg>
                   </button>
-                  <span className="px-4 py-1 text-lg font-medium text-black">{quantity}</span>
+                  <span className="px-4 py-1 text-lg font-medium">{quantity}</span>
                   <button 
                     onClick={decreaseQuantity}
-                    className="px-3 py-2 bg-black  hover:bg-gray-200 transition disabled:opacity-50"
+                    className="px-3 py-2 bg-gray-100 hover:bg-gray-200 transition disabled:opacity-50"
                     disabled={quantity <= 1}
                   >
                     <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -323,6 +374,34 @@ export default function ProductDetailPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13l2.5 5m0 0h8.5" />
                 </svg>
                 أضف إلى السلة
+              </button>
+              
+              {/* View Cart Button */}
+              <button 
+                onClick={viewCart}
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-lg font-medium transition flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                عرض السلة ({cartCount})
+              </button>
+            </div>
+
+            {/* Quick Actions */}
+            <div className="flex flex-wrap gap-2 justify-center pt-4">
+              <button 
+                onClick={() => router.push('/')}
+                className="text-blue-600 hover:text-blue-700 underline text-sm transition"
+              >
+                ← العودة للتسوق
+              </button>
+              <span className="text-gray-400">•</span>
+              <button 
+                onClick={() => router.push('/categories')}
+                className="text-blue-600 hover:text-blue-700 underline text-sm transition"
+              >
+                تصفح المزيد من المنتجات
               </button>
             </div>
           </div>
