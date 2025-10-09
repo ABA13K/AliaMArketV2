@@ -82,7 +82,7 @@ export default function ProductDetailPage() {
   const formatPrice = (price: string): string => {
     try {
       const numericPrice = parseFloat(price);
-      return new Intl.NumberFormat('ar-SY').format(numericPrice) + ' ل.س';
+      return new Intl.NumberFormat('en-US').format(numericPrice) + ' ل.س';
     } catch {
       return price + ' ل.س';
     }
