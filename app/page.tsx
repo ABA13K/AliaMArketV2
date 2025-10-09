@@ -1140,8 +1140,7 @@ const [errorRandom, setErrorRandom] = useState<string | null>(null);
         {latestProducts.map((product) => (
   <div key={product.id} className="group bg-white rounded-xl shadow-md hover:shadow-xl transition overflow-hidden border border-gray-100">
     {/* REPLACE THIS LINK */}
-    <Link href={`/product/${product.id}`} className="block">
-      <div className="relative h-60 overflow-hidden">
+<Link href={`/product/${product.id}`} className="block">      <div className="relative h-60 overflow-hidden">
         <Image
           src={product.image || '/placeholder-product.jpg'}
           alt={product.name}
