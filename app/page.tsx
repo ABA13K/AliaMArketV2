@@ -36,6 +36,11 @@ export default function Home() {
   const [searchError, setSearchError] = useState<string | null>(null);
   const [debouncedSearch, setDebouncedSearch] = useState('');
 
+  // Mobile products state
+  const [mobileProducts, setMobileProducts] = useState<any[]>([]);
+  const [loadingMobileProducts, setLoadingMobileProducts] = useState(true);
+  const [errorMobileProducts, setErrorMobileProducts] = useState<string | null>(null);
+
   interface Category {
     id: number;
     name: string;
@@ -62,6 +67,54 @@ export default function Home() {
     total_rating: number;
     image: string;
   }
+
+  // Fetch mobile products from API
+  useEffect(() => {
+    async function fetchMobileProducts() {
+      try {
+        setLoadingMobileProducts(true);
+        setErrorMobileProducts(null);
+        
+        // Fetch multiple product endpoints for mobile view
+        const [latestRes, bestsellingRes, randomRes] = await Promise.all([
+          fetch('https://mahmoudmohammed.site/api/public/home-page/products/latest'),
+          fetch('https://mahmoudmohammed.site/api/public/home-page/products/top-rated'),
+          fetch('https://mahmoudmohammed.site/api/public/home-page/products/random')
+        ]);
+
+        if (!latestRes.ok || !bestsellingRes.ok || !randomRes.ok) {
+          throw new Error('Failed to fetch mobile products');
+        }
+
+        const [latestData, bestsellingData, randomData] = await Promise.all([
+          latestRes.json(),
+          bestsellingRes.json(),
+          randomRes.json()
+        ]);
+
+        // Combine and limit products for mobile view
+        const combinedProducts = [
+          ...(latestData.data || []).slice(0, 4),
+          ...(bestsellingData.data || []).slice(0, 4),
+          ...(randomData.data || []).slice(0, 4)
+        ];
+
+        // Remove duplicates based on product ID
+        const uniqueProducts = combinedProducts.filter((product, index, self) =>
+          index === self.findIndex(p => p.id === product.id)
+        );
+
+        setMobileProducts(uniqueProducts);
+      } catch (err: any) {
+        setErrorMobileProducts(err.message);
+        console.error('Error fetching mobile products:', err);
+      } finally {
+        setLoadingMobileProducts(false);
+      }
+    }
+    
+    fetchMobileProducts();
+  }, []);
 
   // Debounced search
   useEffect(() => {
@@ -304,14 +357,14 @@ export default function Home() {
   // Responsive categories for mobile
   const responsiveCategories = [
     { id: "all", name: "الكل", icon: "🛍️" },
-    { id: "clothing", name: "ملابس", icon: "👕" },
     { id: "electronics", name: "إلكترونيات", icon: "📱" },
+    { id: "clothing", name: "ملابس", icon: "👕" },
     { id: "home", name: "منزلية", icon: "🏠" },
     { id: "beauty", name: "تجميل", icon: "💄" },
     { id: "sports", name: "رياضة", icon: "⚽" }
   ];
 
-  // Sample products data
+  // Sample fallback products
   const sampleProducts = [
     { 
       id: 1, 
@@ -329,26 +382,17 @@ export default function Home() {
       category: "clothing",
       img: "/products/jacket.jpg",
       rating: 4.7
-    },
-    { 
-      id: 3,
-      name: "كريم عناية", 
-      price: "332,500 ل.س",
-      category: "beauty",
-      img: "/products/skincare.jpg",
-      rating: 4.0
-    },
-    { 
-      id: 4,
-      name: "سماعات بلوتوث", 
-      price: "630,000 ل.س",
-      category: "electronics",
-      img: "/products/headphones.jpg",
-      rating: 4.2
     }
   ];
 
-  const allProducts = [...sampleProducts];
+  const allProducts = [...sampleProducts, ...mobileProducts];
+
+  // Filter mobile products by category
+  const filteredMobileProducts = activeCategory === "all" 
+    ? mobileProducts 
+    : mobileProducts.filter(product => 
+        product.category && product.category.toLowerCase().includes(activeCategory.toLowerCase())
+      );
 
   // Search Results Component
   const SearchResults = () => (
@@ -421,6 +465,147 @@ export default function Home() {
         </div>
       )}
     </div>
+  );
+
+  // Mobile Products Section Component
+  const MobileProductsSection = () => (
+    <section dir="rtl" className="container mx-auto px-4 py-6 lg:hidden">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-bold text-gray-800">
+          {activeCategory === "all" ? "أحدث المنتجات" : responsiveCategories.find(c => c.id === activeCategory)?.name}
+        </h2>
+        <Link href="/products" className="text-orange-600 text-sm hover:text-orange-700">
+          عرض الكل
+        </Link>
+      </div>
+
+      {loadingMobileProducts ? (
+        <div className="grid grid-cols-2 gap-3">
+          {[...Array(6)].map((_, index) => (
+            <div key={index} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden animate-pulse">
+              <div className="aspect-square bg-gray-200"></div>
+              <div className="p-2">
+                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                <div className="h-3 bg-gray-200 rounded w-1/2 mb-2"></div>
+                <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : errorMobileProducts ? (
+        <div className="text-center py-8">
+          <p className="text-red-500 mb-4 text-sm">{errorMobileProducts}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm"
+          >
+            حاول مرة أخرى
+          </button>
+        </div>
+      ) : filteredMobileProducts.length > 0 ? (
+        <div className="grid grid-cols-2 gap-3">
+          {filteredMobileProducts.map((product) => (
+            <div key={product.id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition">
+              <Link href={`/product/${product.id}`} className="block">
+                <div className="relative aspect-square">
+                  <Image
+                    src={getProductImage(product)}
+                    alt={product.name}
+                    fill
+                    className="object-contain p-2"
+                    onError={(e) => {
+                      e.currentTarget.src = '/placeholder-product.jpg';
+                    }}
+                  />
+                  {getProductDiscount(product) > 0 && (
+                    <span className="absolute top-2 left-2 bg-orange-500 text-white text-xs px-1.5 py-0.5 rounded">
+                      خصم {getProductDiscount(product)}%
+                    </span>
+                  )}
+                  <button 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      toggleFavorite({
+                        id: product.id,
+                        name: product.name,
+                        price: getProductPrice(product),
+                        img: getProductImage(product),
+                        oldPrice: getProductOriginalPrice(product),
+                      });
+                    }}
+                    className={`absolute top-2 right-2 bg-white/90 rounded-full w-7 h-7 flex items-center justify-center shadow hover:bg-gray-100 ${
+                      isFavorite(product.id) ? 'text-red-500' : 'text-gray-600'
+                    }`}
+                  >
+                    <svg 
+                      xmlns="http://www.w3.org/2000/svg" 
+                      className="h-4 w-4" 
+                      fill={isFavorite(product.id) ? "currentColor" : "none"} 
+                      viewBox="0 0 24 24" 
+                      stroke="currentColor"
+                    >
+                      <path 
+                        strokeLinecap="round" 
+                        strokeLinejoin="round" 
+                        strokeWidth={2} 
+                        d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" 
+                      />
+                    </svg>
+                  </button>
+                </div>
+                <div className="p-2">
+                  <h3 className="text-sm font-medium text-gray-800 mb-1 line-clamp-1">{product.name}</h3>
+                  <div className="flex items-center mb-1">
+                    {[...Array(5)].map((_, i) => (
+                      <svg 
+                        key={i}
+                        xmlns="http://www.w3.org/2000/svg" 
+                        className={`h-3 w-3 ${i < Math.floor(getProductRating(product)) ? 'text-yellow-400' : 'text-gray-300'}`} 
+                        viewBox="0 0 20 20" 
+                        fill="currentColor"
+                      >
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                      </svg>
+                    ))}
+                    <span className="text-xs text-gray-500 mr-1">({getProductRating(product)})</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-bold text-orange-600">{getProductPrice(product)}</p>
+                      {getProductOriginalPrice(product) && (
+                        <p className="text-xs text-gray-400 line-through">{getProductOriginalPrice(product)}</p>
+                      )}
+                    </div>
+                    <button 
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleAddToCart(product);
+                      }} 
+                      className="text-gray-700 hover:text-orange-600"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              </Link>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="text-center py-8">
+          <p className="text-gray-500 mb-4">لا توجد منتجات في هذه الفئة</p>
+          <button
+            onClick={() => setActiveCategory("all")}
+            className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm"
+          >
+            عرض جميع المنتجات
+          </button>
+        </div>
+      )}
+    </section>
   );
 
   return (
@@ -529,6 +714,11 @@ export default function Home() {
           </div>
         </div>
       </header>
+
+      {/* Mobile Products Section */}
+      <div className="lg:hidden">
+        <MobileProductsSection />
+      </div>
 
       {/* نافذة منبثقة */}
       {showModal && (
