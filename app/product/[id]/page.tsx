@@ -49,7 +49,7 @@ export default function ProductDetailPage() {
         
         console.log('🔄 Fetching product with ID:', productId);
         
-        const res = await fetch(`https://mahmoudmohammed.site/api/public/products/${productId}`);
+        const res = await fetch(`https://aliaecommerce.com/api/public/products/${productId}`);
         
         if (!res.ok) {
           throw new Error(`Failed to fetch product: ${res.status}`);

@@ -77,9 +77,9 @@ export default function Home() {
         
         // Fetch multiple product endpoints for mobile view
         const [latestRes, bestsellingRes, randomRes] = await Promise.all([
-          fetch('https://mahmoudmohammed.site/api/public/home-page/products/latest'),
-          fetch('https://mahmoudmohammed.site/api/public/home-page/products/top-rated'),
-          fetch('https://mahmoudmohammed.site/api/public/home-page/products/random')
+          fetch('https://aliaecommerce.com/api/public/home-page/products/latest'),
+          fetch('https://aliaecommerce.com/api/public/home-page/products/top-rated'),
+          fetch('https://aliaecommerce.com/api/public/home-page/products/random')
         ]);
 
         if (!latestRes.ok || !bestsellingRes.ok || !randomRes.ok) {
@@ -155,7 +155,7 @@ export default function Home() {
       setSearchResults(localResults);
 
       // Then search via API
-      const response = await fetch(`https://mahmoudmohammed.site/api/public/products/search?q=${encodeURIComponent(query)}`);
+      const response = await fetch(`https://aliaecommerce.com/api/public/products/search?q=${encodeURIComponent(query)}`);
       
       if (!response.ok) {
         throw new Error(`فشل في البحث: ${response.statusText}`);
@@ -208,7 +208,7 @@ export default function Home() {
         setLoadingRandom(true);
         setErrorRandom(null);
         
-        const res = await fetch('https://mahmoudmohammed.site/api/public/home-page/products/random');
+        const res = await fetch('https://aliaecommerce.com/api/public/home-page/products/random');
         
         if (!res.ok) {
           throw new Error(`Failed to fetch random products: ${res.statusText}`);
@@ -238,7 +238,7 @@ export default function Home() {
         setLoadinglastet(true);
         setErrorlastest(null);
         
-        const res = await fetch('https://mahmoudmohammed.site/api/public/home-page/products/latest');
+        const res = await fetch('https://aliaecommerce.com/api/public/home-page/products/latest');
         
         if (!res.ok) {
           throw new Error(`Failed to fetch latest products: ${res.statusText}`);
@@ -268,7 +268,7 @@ export default function Home() {
         setLoadingBestselling(true);
         setErrorBestselling(null);
         
-        const res = await fetch('https://mahmoudmohammed.site/api/public/home-page/products/top-rated');
+        const res = await fetch('https://aliaecommerce.com/api/public/home-page/products/top-rated');
         
         if (!res.ok) {
           throw new Error(`Failed to fetch bestselling products: ${res.statusText}`);
@@ -298,7 +298,7 @@ export default function Home() {
         setLoadingCategories(true);
         setErrorCategories(null);
         
-        const res = await fetch('https://mahmoudmohammed.site/api/public/home-page/main-categorical');
+        const res = await fetch('https://aliaecommerce.com/api/public/home-page/main-categorical');
         
         if (!res.ok) {
           throw new Error(`Failed to fetch categories: ${res.statusText}`);

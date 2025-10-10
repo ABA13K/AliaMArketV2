@@ -38,7 +38,7 @@ export default function Categories() {
         setLoading(true);
         setError(null);
         
-        const res = await fetch('https://mahmoudmohammed.site/api/public/home-page/main-categorical');
+        const res = await fetch('https://aliaecommerce.com/api/public/home-page/main-categorical');
         
         if (!res.ok) {
           throw new Error(`Failed to fetch categories: ${res.statusText}`);
